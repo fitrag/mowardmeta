@@ -3,7 +3,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl lg:text-3xl font-bold" style="color: var(--text-primary);">User Management</h1>
-            <p class="mt-1" style="color: var(--text-secondary);">Manage user accounts and permissions</p>
+            <p class="mt-1" style="color: var(--text-secondary);">Manage user accounts, permissions, and subscriptions</p>
         </div>
 
         <button wire:click="openCreateModal" class="btn-primary">
@@ -28,10 +28,15 @@
                     class="input pl-12"
                 >
             </div>
-            <select wire:model.live="roleFilter" class="input sm:w-48">
+            <select wire:model.live="roleFilter" class="input sm:w-40">
                 <option value="">All Roles</option>
                 <option value="admin">Admin</option>
                 <option value="user">User</option>
+            </select>
+            <select wire:model.live="subscriptionFilter" class="input sm:w-48">
+                <option value="">All Subscriptions</option>
+                <option value="subscribed">Subscribed</option>
+                <option value="free">Free</option>
             </select>
         </div>
     </div>
@@ -45,7 +50,8 @@
                         <th class="px-4 py-3 text-left text-sm font-medium" style="color: var(--text-secondary);">User</th>
                         <th class="px-4 py-3 text-left text-sm font-medium" style="color: var(--text-secondary);">Role</th>
                         <th class="px-4 py-3 text-left text-sm font-medium hidden md:table-cell" style="color: var(--text-secondary);">Status</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium hidden lg:table-cell" style="color: var(--text-secondary);">Joined</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium hidden lg:table-cell" style="color: var(--text-secondary);">Subscription</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium hidden xl:table-cell" style="color: var(--text-secondary);">Credits</th>
                         <th class="px-4 py-3 text-right text-sm font-medium" style="color: var(--text-secondary);">Actions</th>
                     </tr>
                 </thead>
@@ -84,10 +90,60 @@
                                 </button>
                             </td>
                             <td class="px-4 py-3 hidden lg:table-cell">
-                                <span class="text-sm" style="color: var(--text-secondary);">{{ $user->created_at->format('M d, Y') }}</span>
+                                @if($user->role === 'admin')
+                                    <span class="px-2 py-1 rounded text-xs bg-primary-500/20 text-primary-600">Admin</span>
+                                @elseif($user->isSubscribed())
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-1 rounded text-xs bg-emerald-500/20 text-emerald-600">Subscribed</span>
+                                        @if($user->subscription_expires_at)
+                                            <span class="text-xs" style="color: var(--text-secondary);">
+                                                until {{ $user->subscription_expires_at->format('d M Y') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="px-2 py-1 rounded text-xs" style="background-color: var(--bg-hover); color: var(--text-secondary);">Free</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 hidden xl:table-cell">
+                                @if($user->role !== 'admin' && !$user->isSubscribed())
+                                    <div class="flex items-center gap-2" x-data="{ credits: 5 }">
+                                        <span class="px-2 py-1 rounded text-xs font-medium bg-amber-500/20 text-amber-600">
+                                            {{ $user->bonus_credits }} credits
+                                        </span>
+                                        <button 
+                                            wire:click="addCredits({{ $user->id }}, 5)"
+                                            class="px-2 py-1 text-xs bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30 rounded font-medium transition-colors"
+                                            title="Add 5 credits"
+                                        >
+                                            +5
+                                        </button>
+                                    </div>
+                                @elseif($user->role !== 'admin')
+                                    <span class="text-xs" style="color: var(--text-muted);">Unlimited</span>
+                                @else
+                                    <span class="text-xs" style="color: var(--text-muted);">—</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-2">
+                                    @if($user->role !== 'admin')
+                                        <button 
+                                            wire:click="toggleSubscription({{ $user->id }})"
+                                            class="p-2 rounded-lg transition-colors {{ $user->is_subscribed ? 'text-amber-500 hover:bg-amber-500/20' : 'text-emerald-500 hover:bg-emerald-500/20' }}"
+                                            title="{{ $user->is_subscribed ? 'Remove Subscription' : 'Add Subscription' }}"
+                                        >
+                                            @if($user->is_subscribed)
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                            @endif
+                                        </button>
+                                    @endif
                                     <button 
                                         wire:click="openEditModal({{ $user->id }})"
                                         class="p-2 rounded-lg transition-colors"
@@ -136,7 +192,7 @@
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" wire:click="closeModal"></div>
             
-            <div class="relative rounded-2xl w-full max-w-md p-6 animate-fade-in" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+            <div class="relative rounded-2xl w-full max-w-md p-6 animate-fade-in max-h-[90vh] overflow-y-auto" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
                 <h2 class="text-xl font-bold mb-6" style="color: var(--text-primary);">
                     {{ $isEditing ? 'Edit User' : 'Add New User' }}
                 </h2>
@@ -171,12 +227,35 @@
                         @error('role') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
                     </div>
 
-                    <div>
+                    <div class="flex items-center gap-6">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" wire:model="is_active" class="w-4 h-4 rounded text-primary-500 focus:ring-primary-500/50" style="border-color: var(--border-color); background-color: var(--bg-input);">
                             <span class="text-sm" style="color: var(--text-primary);">Active</span>
                         </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" wire:model="is_subscribed" class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500/50" style="border-color: var(--border-color); background-color: var(--bg-input);">
+                            <span class="text-sm" style="color: var(--text-primary);">Subscribed</span>
+                        </label>
                     </div>
+
+                    @if($is_subscribed)
+                        <div class="p-4 rounded-xl" style="background-color: var(--bg-hover);">
+                            <label for="subscription_days" class="label">Subscription Duration (days)</label>
+                            <select id="subscription_days" wire:model="subscription_days" class="input">
+                                <option value="30">30 days (1 Month)</option>
+                                <option value="90">90 days (3 Months)</option>
+                                <option value="180">180 days (6 Months)</option>
+                                <option value="365">365 days (1 Year)</option>
+                            </select>
+                            <p class="text-xs mt-2" style="color: var(--text-secondary);">
+                                @if($isEditing)
+                                    This will set the subscription duration from today when subscription is newly enabled.
+                                @else
+                                    Subscription will be active for this duration starting today.
+                                @endif
+                            </p>
+                        </div>
+                    @endif
 
                     <div class="flex gap-3 pt-4">
                         <button type="button" wire:click="closeModal" class="btn-secondary flex-1">

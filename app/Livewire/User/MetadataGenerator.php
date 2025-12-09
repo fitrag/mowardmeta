@@ -3,6 +3,7 @@
 namespace App\Livewire\User;
 
 use App\Models\ApiKey;
+use App\Models\MetadataGeneration;
 use Illuminate\Support\Facades\Http;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -14,6 +15,7 @@ class MetadataGenerator extends Component
 {
     public string $description = '';
     public bool $isProcessing = false;
+    public bool $isRegenerating = false; // Flag for single image retry
     public ?string $error = null;
     
     // Queue management (synced from frontend)
@@ -30,6 +32,13 @@ class MetadataGenerator extends Component
     // Results
     public array $results = [];
 
+    // Available Gemini models to try (in order of preference)
+    protected array $geminiModels = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+    ];
+
     public function setImageQueue(array $queue): void
     {
         $this->imageQueue = $queue;
@@ -45,6 +54,22 @@ class MetadataGenerator extends Component
         if (empty($this->imageQueue)) {
             $this->error = 'Please upload at least one image.';
             return;
+        }
+
+        // Check subscription limit for free users
+        $user = auth()->user();
+        if (!$user->canGenerate()) {
+            $this->error = 'You have reached your daily limit of ' . $user->getDailyLimit() . ' generations. Please upgrade to a subscription for unlimited access.';
+            return;
+        }
+
+        // Check if user has enough remaining generations for all images
+        if (!$user->isSubscribed()) {
+            $remaining = $user->getRemainingGenerations();
+            if ($remaining < count($this->imageQueue)) {
+                $this->error = 'You can only generate ' . $remaining . ' more image(s) today. Please reduce the number of images or upgrade to a subscription.';
+                return;
+            }
         }
 
         $this->isProcessing = true;
@@ -64,21 +89,84 @@ class MetadataGenerator extends Component
         $this->imageQueue[$index]['status'] = 'processing';
         
         try {
-            // Get random active API key
-            $apiKey = ApiKey::getRandomActive('gemini');
+            $user = auth()->user();
+            $apiKeys = collect();
             
-            if (!$apiKey) {
+            // First, try user's personal API key if they have one
+            if ($user->hasPersonalApiKey()) {
+                // Create a temporary ApiKey-like object for personal key
+                $personalKey = new ApiKey([
+                    'api_key' => $user->gemini_api_key,
+                    'provider' => 'gemini',
+                    'is_active' => true,
+                ]);
+                $personalKey->is_personal = true; // Flag to identify personal key
+                $apiKeys->push($personalKey);
+            }
+            
+            // Add shared API keys as fallback
+            $sharedKeys = ApiKey::where('provider', 'gemini')
+                ->where('is_active', true)
+                ->inRandomOrder()
+                ->get();
+            
+            $apiKeys = $apiKeys->concat($sharedKeys);
+            
+            if ($apiKeys->isEmpty()) {
                 throw new \Exception('No active API key available. Please contact administrator.');
             }
 
-            // Call Gemini API with base64 data directly
-            $response = $this->callGeminiApi($apiKey, $base64Data, $mimeType);
+            $lastError = null;
+            $response = null;
+            $usedApiKey = null;
+            $usedModel = null;
+
+            // Try each API key with each model until one works
+            foreach ($apiKeys as $apiKey) {
+                foreach ($this->geminiModels as $model) {
+                    try {
+                        $response = $this->callGeminiApi($apiKey, $base64Data, $mimeType, $model);
+                        $usedApiKey = $apiKey;
+                        $usedModel = $model;
+                        break 2; // Success, exit both loops
+                    } catch (\Exception $e) {
+                        $lastError = $e->getMessage();
+                        
+                        // Check if it's a quota/rate limit error - try next model/key
+                        if (str_contains(strtolower($lastError), 'quota') || 
+                            str_contains(strtolower($lastError), 'rate') ||
+                            str_contains(strtolower($lastError), 'limit') ||
+                            str_contains(strtolower($lastError), '429') ||
+                            str_contains(strtolower($lastError), 'exceeded') ||
+                            str_contains(strtolower($lastError), 'resource')) {
+                            continue; // Try next model
+                        }
+                        
+                        // For other errors, throw immediately
+                        throw $e;
+                    }
+                }
+            }
+
+            // If no API key/model combination worked
+            if (!$response || !$usedApiKey) {
+                throw new \Exception('All API keys and models exhausted. Last error: ' . ($lastError ?? 'Unknown error'));
+            }
             
             // Parse response
             $parsed = $this->parseGeminiResponse($response);
 
             // Increment API key usage
-            $apiKey->incrementUsage();
+            $usedApiKey->incrementUsage();
+
+            // Save to database for generation count tracking
+            MetadataGeneration::create([
+                'user_id' => auth()->id(),
+                'filename' => $filename,
+                'title' => $parsed['title'],
+                'keywords' => $parsed['keywords'],
+                'ai_model' => $usedModel,
+            ]);
             
             // Update queue
             $this->imageQueue[$index]['status'] = 'completed';
@@ -102,9 +190,20 @@ class MetadataGenerator extends Component
         } catch (\Exception $e) {
             $this->imageQueue[$index]['status'] = 'failed';
             $this->imageQueue[$index]['error'] = $e->getMessage();
+            // Also set main error so it displays in the UI
+            $this->error = 'Generation failed: ' . $e->getMessage();
         }
         
         $this->processedCount++;
+        
+        // If regenerating a single image, stop here
+        if ($this->isRegenerating) {
+            $this->isProcessing = false;
+            $this->isRegenerating = false;
+            $this->currentIndex = -1;
+            return;
+        }
+        
         $this->currentIndex++;
         
         // Continue to next image or finish
@@ -117,12 +216,43 @@ class MetadataGenerator extends Component
         }
     }
 
-    protected function callGeminiApi(ApiKey $apiKey, string $imageData, string $mimeType): array
+    /**
+     * Regenerate a failed image
+     */
+    public function regenerateImage(int $index): void
+    {
+        // Only allow regenerating failed images
+        if (!isset($this->imageQueue[$index]) || $this->imageQueue[$index]['status'] !== 'failed') {
+            return;
+        }
+
+        // Check if user can still generate (for free users)
+        $user = auth()->user();
+        if (!$user->canGenerate()) {
+            $this->error = 'You have reached your daily limit. Please upgrade to continue.';
+            return;
+        }
+
+        // Reset the image status
+        $this->imageQueue[$index]['status'] = 'pending';
+        $this->imageQueue[$index]['error'] = null;
+        $this->error = null;
+
+        // Set this as current index and mark as processing
+        $this->currentIndex = $index;
+        $this->isProcessing = true;
+        $this->isRegenerating = true; // Mark as single image regeneration
+
+        // Request image data from frontend for this specific index
+        $this->dispatch('request-image-data', ['index' => $index]);
+    }
+
+    protected function callGeminiApi(ApiKey $apiKey, string $imageData, string $mimeType, string $model = 'gemini-2.0-flash'): array
     {
         $prompt = $this->buildPrompt();
 
         $response = Http::timeout(60)->post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey->api_key}",
+            "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey->api_key}",
             [
                 'contents' => [
                     [
@@ -141,7 +271,7 @@ class MetadataGenerator extends Component
                 ],
                 'generationConfig' => [
                     'temperature' => 0.7,
-                    'maxOutputTokens' => 1024,
+                    'maxOutputTokens' => 2048,
                 ],
             ]
         );
@@ -234,17 +364,46 @@ PROMPT;
 
     protected function parseGeminiResponse(array $response): array
     {
+        // Try to get text from response - handle different response structures
         $text = $response['candidates'][0]['content']['parts'][0]['text'] ?? '';
         
-        // Remove markdown code blocks if present
-        $text = preg_replace('/```json\s*/', '', $text);
-        $text = preg_replace('/```\s*/', '', $text);
+        // If no text found, check for other possible structures
+        if (empty($text)) {
+            \Log::error('Gemini response structure:', $response);
+            throw new \Exception('Empty response from AI.');
+        }
+        
+        // Remove markdown code blocks if present (various formats)
+        $text = preg_replace('/^```json\s*/m', '', $text);
+        $text = preg_replace('/^```\s*$/m', '', $text);
         $text = trim($text);
+
+        // Find the JSON object - look for opening { and find matching closing }
+        $startPos = strpos($text, '{');
+        if ($startPos !== false) {
+            $depth = 0;
+            $endPos = $startPos;
+            for ($i = $startPos; $i < strlen($text); $i++) {
+                if ($text[$i] === '{') $depth++;
+                if ($text[$i] === '}') $depth--;
+                if ($depth === 0) {
+                    $endPos = $i;
+                    break;
+                }
+            }
+            $text = substr($text, $startPos, $endPos - $startPos + 1);
+        }
 
         $data = json_decode($text, true);
 
-        if (!$data || !isset($data['title']) || !isset($data['keywords'])) {
+        if (!$data) {
+            \Log::error('Failed to parse JSON. Raw text:', ['text' => $text]);
             throw new \Exception('Failed to parse AI response. Please try again.');
+        }
+
+        if (!isset($data['title']) || !isset($data['keywords'])) {
+            \Log::error('Missing required fields:', $data);
+            throw new \Exception('AI response missing title or keywords.');
         }
 
         return [
@@ -282,6 +441,13 @@ PROMPT;
 
     public function render()
     {
-        return view('livewire.user.metadata-generator');
+        $user = auth()->user();
+        
+        return view('livewire.user.metadata-generator', [
+            'isSubscribed' => $user->isSubscribed(),
+            'remainingGenerations' => $user->getRemainingGenerations(),
+            'dailyLimit' => $user->getDailyLimit(),
+            'canGenerate' => $user->canGenerate(),
+        ]);
     }
 }

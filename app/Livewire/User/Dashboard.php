@@ -18,6 +18,10 @@ class Dashboard extends Component
             'totalGenerations' => $user->metadataGenerations()->count(),
             'todayGenerations' => $user->metadataGenerations()->whereDate('created_at', today())->count(),
             'recentGenerations' => $user->metadataGenerations()->latest()->take(5)->get(),
+            'isSubscribed' => $user->isSubscribed(),
+            'remainingGenerations' => $user->getRemainingGenerations(),
+            'dailyLimit' => $user->getDailyLimit(),
+            'subscriptionExpiresAt' => $user->subscription_expires_at,
         ]);
     }
 }

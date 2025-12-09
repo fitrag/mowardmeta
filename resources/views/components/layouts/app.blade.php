@@ -76,7 +76,7 @@
                             
                             <a href="{{ route('admin.users') }}" class="sidebar-link {{ request()->routeIs('admin.users') ? 'active' : '' }}" wire:navigate>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                                 </svg>
                                 <span class="font-medium">Users</span>
                             </a>
@@ -86,6 +86,31 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                                 </svg>
                                 <span class="font-medium">API Keys</span>
+                            </a>
+                            
+                            @php $pendingOrdersCount = \App\Models\SubscriptionOrder::pending()->count(); @endphp
+                            <a href="{{ route('admin.orders') }}" class="sidebar-link {{ request()->routeIs('admin.orders') ? 'active' : '' }}" wire:navigate>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                <span class="font-medium">Orders</span>
+                                @if($pendingOrdersCount > 0)
+                                    <span class="ml-auto px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500">{{ $pendingOrdersCount }}</span>
+                                @endif
+                            </a>
+                            
+                            <a href="{{ route('admin.payment-methods') }}" class="sidebar-link {{ request()->routeIs('admin.payment-methods') ? 'active' : '' }}" wire:navigate>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                </svg>
+                                <span class="font-medium">Payment Methods</span>
+                            </a>
+                            
+                            <a href="{{ route('admin.subscription-plans') }}" class="sidebar-link {{ request()->routeIs('admin.subscription-plans') ? 'active' : '' }}" wire:navigate>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span class="font-medium">Subscription Plans</span>
                             </a>
                             
                             <div class="my-6 border-t mx-4 opacity-50" style="border-color: var(--border-color);"></div>
@@ -109,11 +134,36 @@
                             <span class="font-medium">Generate Metadata</span>
                         </a>
 
+                        <a href="{{ route('keywords') }}" class="sidebar-link {{ request()->routeIs('keywords') ? 'active' : '' }}" wire:navigate>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                            </svg>
+                            <span class="font-medium">Keyword Generator</span>
+                        </a>
+
                         <a href="{{ route('history') }}" class="sidebar-link {{ request()->routeIs('history') ? 'active' : '' }}" wire:navigate>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <span class="font-medium">History</span>
+                        </a>
+
+                        <a href="{{ route('subscription') }}" class="sidebar-link {{ request()->routeIs('subscription') ? 'active' : '' }}" wire:navigate>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                            </svg>
+                            <span class="font-medium">Subscription</span>
+                            @if(!auth()->user()->isSubscribed() && !auth()->user()->isAdmin())
+                                <span class="ml-auto px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500">Free</span>
+                            @endif
+                        </a>
+
+                        <a href="{{ route('settings') }}" class="sidebar-link {{ request()->routeIs('settings') ? 'active' : '' }}" wire:navigate>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span class="font-medium">Settings</span>
                         </a>
                     @endauth
                 </nav>
@@ -126,7 +176,12 @@
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="font-semibold text-sm truncate" style="color: var(--text-primary);">{{ auth()->user()->name }}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="font-semibold text-sm truncate" style="color: var(--text-primary);">{{ auth()->user()->name }}</p>
+                                @if(auth()->user()->isSubscribed())
+                                    <span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-amber-500 to-orange-500 text-white">PRO</span>
+                                @endif
+                            </div>
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                                 <p class="text-xs truncate opacity-70" style="color: var(--text-secondary);">{{ auth()->user()->isAdmin() ? 'Administrator' : 'Online' }}</p>

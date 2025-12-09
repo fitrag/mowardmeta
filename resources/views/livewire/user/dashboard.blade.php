@@ -44,19 +44,39 @@
             <p class="text-sm mt-1" style="color: var(--text-secondary);">New generations</p>
         </div>
 
-        <!-- Account Status -->
+        <!-- Subscription Status -->
         <div class="p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1" 
              style="background-color: var(--bg-card); border-color: var(--border-color);">
             <div class="flex items-center justify-between mb-4">
-                <div class="w-10 h-10 rounded-xl bg-accent-cyan/10 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
+                <div class="w-10 h-10 rounded-xl {{ $isSubscribed ? 'bg-emerald-500/10' : 'bg-amber-500/10' }} flex items-center justify-center">
+                    @if($isSubscribed)
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                        </svg>
+                    @else
+                        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    @endif
                 </div>
-                <span class="text-xs font-medium px-2 py-1 rounded-lg bg-cyan-500/10 text-cyan-500">Status</span>
+                <span class="text-xs font-medium px-2 py-1 rounded-lg {{ $isSubscribed ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500' }}">
+                    {{ $isSubscribed ? 'Subscribed' : 'Free' }}
+                </span>
             </div>
-            <p class="text-xl font-bold tracking-tight text-emerald-500">Active</p>
-            <p class="text-sm mt-1" style="color: var(--text-secondary);">Account verified</p>
+            @if($isSubscribed)
+                <p class="text-xl font-bold tracking-tight text-emerald-500">Unlimited</p>
+                @if($subscriptionExpiresAt)
+                    <p class="text-sm mt-1" style="color: var(--text-secondary);">Until {{ $subscriptionExpiresAt->format('d M Y') }}</p>
+                @else
+                    <p class="text-sm mt-1" style="color: var(--text-secondary);">Lifetime access</p>
+                @endif
+            @else
+                <p class="text-xl font-bold tracking-tight text-amber-500">{{ $remainingGenerations }}/{{ $dailyLimit }}</p>
+                <p class="text-sm mt-1" style="color: var(--text-secondary);">Remaining today</p>
+                <a href="{{ route('subscription') }}" class="inline-flex items-center gap-1 text-xs font-medium text-primary-500 hover:text-primary-400 mt-2" wire:navigate>
+                    Upgrade →
+                </a>
+            @endif
         </div>
     </div>
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -24,6 +25,12 @@ class User extends Authenticatable
         'password',
         'role',
         'is_active',
+        'is_subscribed',
+        'subscription_expires_at',
+        'bonus_credits',
+        'gemini_api_key',
+        'google_id',
+        'avatar',
         'theme',
     ];
 
@@ -35,6 +42,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'gemini_api_key',
     ];
 
     /**
@@ -48,7 +56,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_subscribed' => 'boolean',
+            'subscription_expires_at' => 'datetime',
+            'gemini_api_key' => 'encrypted',
         ];
+    }
+
+    /**
+     * Check if user has a personal API key
+     */
+    public function hasPersonalApiKey(): bool
+    {
+        return $this->isSubscribed() && !empty($this->gemini_api_key);
     }
 
     /**
@@ -68,10 +87,140 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user has active subscription
+     */
+    public function isSubscribed(): bool
+    {
+        // Admin always has access
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Check if subscription is active and not expired
+        if (!$this->is_subscribed) {
+            return false;
+        }
+
+        // If no expiry date, subscription is active indefinitely
+        if (!$this->subscription_expires_at) {
+            return true;
+        }
+
+        return $this->subscription_expires_at->isFuture();
+    }
+
+    /**
+     * Check if user can generate metadata
+     */
+    public function canGenerate(): bool
+    {
+        // Subscribed users can always generate
+        if ($this->isSubscribed()) {
+            return true;
+        }
+
+        // Free users are limited by daily count + bonus credits
+        $totalCredits = $this->getDailyLimit() + $this->bonus_credits;
+        return $this->getTodayGenerationCount() < $totalCredits;
+    }
+
+    /**
+     * Get today's generation count
+     */
+    public function getTodayGenerationCount(): int
+    {
+        return $this->metadataGenerations()
+            ->whereDate('created_at', Carbon::today())
+            ->count();
+    }
+
+    /**
+     * Get remaining generations for free users
+     */
+    public function getRemainingGenerations(): int
+    {
+        if ($this->isSubscribed()) {
+            return PHP_INT_MAX; // Unlimited
+        }
+
+        // Daily limit + bonus credits - today's usage
+        $totalCredits = $this->getDailyLimit() + $this->bonus_credits;
+        $remaining = $totalCredits - $this->getTodayGenerationCount();
+        return max(0, $remaining);
+    }
+
+    /**
+     * Get total available credits (daily + bonus)
+     */
+    public function getTotalCredits(): int
+    {
+        if ($this->isSubscribed()) {
+            return PHP_INT_MAX;
+        }
+        return $this->getDailyLimit() + $this->bonus_credits;
+    }
+
+    /**
+     * Consume one bonus credit after using daily limit
+     */
+    public function consumeBonusCredit(): void
+    {
+        if ($this->bonus_credits > 0 && $this->getTodayGenerationCount() >= $this->getDailyLimit()) {
+            $this->decrement('bonus_credits');
+        }
+    }
+
+    /**
+     * Get daily generation limit for free users
+     */
+    public function getDailyLimit(): int
+    {
+        return (int) Setting::getValue('free_user_daily_limit', 5);
+    }
+
+    /**
+     * Get subscription status label
+     */
+    public function getSubscriptionStatusAttribute(): string
+    {
+        if ($this->isSubscribed()) {
+            if ($this->subscription_expires_at) {
+                return 'Subscribed until ' . $this->subscription_expires_at->format('d M Y');
+            }
+            return 'Subscribed';
+        }
+        return 'Free';
+    }
+
+    /**
      * Get metadata generations for user
      */
     public function metadataGenerations(): HasMany
     {
         return $this->hasMany(MetadataGeneration::class);
+    }
+
+    /**
+     * Get subscription orders for user
+     */
+    public function subscriptionOrders(): HasMany
+    {
+        return $this->hasMany(SubscriptionOrder::class);
+    }
+
+    /**
+     * Check if user has a pending subscription order
+     */
+    public function hasPendingOrder(): bool
+    {
+        return $this->subscriptionOrders()->pending()->exists();
+    }
+
+    /**
+     * Get the latest pending order
+     */
+    public function latestPendingOrder()
+    {
+        return $this->subscriptionOrders()->pending()->latest()->first();
     }
 }

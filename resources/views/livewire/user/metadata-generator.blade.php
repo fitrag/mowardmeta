@@ -12,9 +12,34 @@
 >
 
     <!-- Header -->
-    <div>
-        <h1 class="text-2xl lg:text-3xl font-bold" style="color: var(--text-primary);">Generate Metadata</h1>
-        <p class="mt-1" style="color: var(--text-secondary);">AI-powered metadata for stock photography</p>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl lg:text-3xl font-bold" style="color: var(--text-primary);">Generate Metadata</h1>
+            <p class="mt-1" style="color: var(--text-secondary);">AI-powered metadata for stock photography</p>
+        </div>
+        
+        @if(!$isSubscribed)
+            <div class="flex items-center gap-3">
+                <div class="px-4 py-2 rounded-xl {{ $canGenerate ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-red-500/10 border border-red-500/20' }}">
+                    <div class="flex items-center gap-2">
+                        @if($canGenerate)
+                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span class="text-sm font-medium text-amber-600">{{ $remainingGenerations }}/{{ $dailyLimit }} remaining today</span>
+                        @else
+                            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <span class="text-sm font-medium text-red-500">Daily limit reached</span>
+                        @endif
+                    </div>
+                </div>
+                <a href="{{ route('subscription') }}" class="px-4 py-2 text-sm font-medium rounded-xl bg-primary-500 text-white hover:bg-primary-400 transition-colors" wire:navigate>
+                    Upgrade
+                </a>
+            </div>
+        @endif
     </div>
 
     <!-- Two Column Layout -->
@@ -101,10 +126,16 @@
                                     </div>
                                 </template>
                                 <template x-if="getImageStatus(index) === 'failed'">
-                                    <div class="absolute inset-0 bg-red-500/30 flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="absolute inset-0 bg-red-500/30 flex flex-col items-center justify-center gap-1">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                         </svg>
+                                        <button 
+                                            @click="$wire.regenerateImage(index)"
+                                            class="px-2 py-0.5 text-xs bg-white/90 hover:bg-white text-red-600 rounded font-medium transition-colors"
+                                        >
+                                            Retry
+                                        </button>
                                     </div>
                                 </template>
                                 
