@@ -129,9 +129,13 @@ class User extends Authenticatable
      */
     public function getTodayGenerationCount(): int
     {
-        return $this->metadataGenerations()
-            ->whereDate('created_at', Carbon::today())
-            ->count();
+        return cache()->remember(
+            "user_{$this->id}_today_gen_count_" . today()->format('Y-m-d'),
+            60, // 1 minute cache
+            fn() => $this->metadataGenerations()
+                ->whereDate('created_at', today())
+                ->count()
+        );
     }
 
     /**
@@ -175,7 +179,11 @@ class User extends Authenticatable
      */
     public function getDailyLimit(): int
     {
-        return (int) Setting::getValue('free_user_daily_limit', 5);
+        return cache()->remember(
+            'app_free_user_daily_limit',
+            3600, // 1 hour cache
+            fn() => (int) Setting::getValue('free_user_daily_limit', 5)
+        );
     }
 
     /**

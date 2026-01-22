@@ -4,8 +4,10 @@ namespace App\Livewire\Admin;
 
 use App\Models\SubscriptionOrder;
 use Carbon\Carbon;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -15,7 +17,10 @@ class Orders extends Component
 {
     use WithPagination;
 
+    #[Url(except: '')]
     public string $search = '';
+    
+    #[Url(except: '')]
     public string $statusFilter = '';
     
     public bool $showModal = false;
@@ -35,7 +40,7 @@ class Orders extends Component
 
     public function viewOrder(int $orderId): void
     {
-        $this->viewingOrder = SubscriptionOrder::with(['user', 'subscriptionPlan', 'paymentMethod', 'processedByUser'])->find($orderId);
+        $this->viewingOrder = SubscriptionOrder::with(['user:id,name,email', 'subscriptionPlan:id,name,price,duration_days', 'paymentMethod:id,name', 'processedByUser:id,name'])->find($orderId);
         $this->viewingOrderId = $orderId;
         $this->adminNotes = $this->viewingOrder->admin_notes ?? '';
         $this->showModal = true;
@@ -44,6 +49,7 @@ class Orders extends Component
     public function approveOrder(): void
     {
         if (!$this->viewingOrder || !$this->viewingOrder->isPending()) {
+            session()->flash('error', 'Order not found or already processed.');
             return;
         }
 
@@ -51,15 +57,22 @@ class Orders extends Component
         $user = $order->user;
         $plan = $order->subscriptionPlan;
 
+        if (!$user || !$plan) {
+            session()->flash('error', 'User or subscription plan not found.');
+            return;
+        }
+
         // Calculate new expiry date
         $baseDate = $user->subscription_expires_at && $user->subscription_expires_at->isFuture()
-            ? $user->subscription_expires_at
+            ? $user->subscription_expires_at->copy()
             : Carbon::now();
+
+        $newExpiryDate = $baseDate->addDays($plan->duration_days);
 
         // Update user subscription
         $user->update([
             'is_subscribed' => true,
-            'subscription_expires_at' => $baseDate->addDays($plan->duration_days),
+            'subscription_expires_at' => $newExpiryDate,
         ]);
 
         // Update order status
@@ -70,6 +83,7 @@ class Orders extends Component
             'processed_by' => auth()->id(),
         ]);
 
+        session()->flash('success', 'Order approved successfully!');
         $this->closeModal();
     }
 
@@ -97,9 +111,11 @@ class Orders extends Component
         $this->adminNotes = '';
     }
 
-    public function render()
+    #[Computed]
+    public function orders()
     {
-        $orders = SubscriptionOrder::with(['user', 'subscriptionPlan', 'paymentMethod'])
+        return SubscriptionOrder::with(['user:id,name,email', 'subscriptionPlan:id,name,price', 'paymentMethod:id,name'])
+            ->select(['id', 'user_id', 'subscription_plan_id', 'payment_method_id', 'status', 'created_at', 'processed_at'])
             ->when($this->search, function ($query) {
                 $query->whereHas('user', function ($q) {
                     $q->where('name', 'like', "%{$this->search}%")
@@ -111,12 +127,19 @@ class Orders extends Component
             })
             ->latest()
             ->paginate(10);
+    }
 
-        $pendingCount = SubscriptionOrder::pending()->count();
+    #[Computed]
+    public function pendingCount(): int
+    {
+        return SubscriptionOrder::pending()->count();
+    }
 
+    public function render()
+    {
         return view('livewire.admin.orders', [
-            'orders' => $orders,
-            'pendingCount' => $pendingCount,
+            'orders' => $this->orders,
+            'pendingCount' => $this->pendingCount,
         ]);
     }
 }

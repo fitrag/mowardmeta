@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SocialiteController;
 use App\Livewire\Admin\ApiKeys;
+use App\Livewire\Admin\AppSettings;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Orders;
 use App\Livewire\Admin\PaymentMethods;
@@ -66,5 +67,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/orders', Orders::class)->name('admin.orders');
     Route::get('/payment-methods', PaymentMethods::class)->name('admin.payment-methods');
     Route::get('/subscription-plans', SubscriptionPlans::class)->name('admin.subscription-plans');
+    Route::get('/settings', AppSettings::class)->name('admin.settings');
 });
 

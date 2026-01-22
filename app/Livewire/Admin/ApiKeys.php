@@ -25,7 +25,7 @@ class ApiKeys extends Component
     #[Validate('required')]
     public string $api_key = '';
 
-    #[Validate('required|in:gemini')]
+    #[Validate('required|in:gemini,groq,mistral')]
     public string $provider = 'gemini';
 
     #[Validate('boolean')]

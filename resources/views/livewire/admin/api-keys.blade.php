@@ -3,7 +3,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl lg:text-3xl font-bold" style="color: var(--text-primary);">API Keys</h1>
-            <p class="mt-1" style="color: var(--text-secondary);">Manage Gemini API keys for metadata generation</p>
+            <p class="mt-1" style="color: var(--text-secondary);">Manage AI API keys for metadata generation</p>
         </div>
 
         <button wire:click="openCreateModal" class="btn-primary">
@@ -125,7 +125,7 @@
                                         </svg>
                                     </div>
                                     <h3 class="font-medium mb-1" style="color: var(--text-primary);">No API keys configured</h3>
-                                    <p class="text-sm mb-4" style="color: var(--text-secondary);">Add a Gemini API key to enable metadata generation</p>
+                                    <p class="text-sm mb-4" style="color: var(--text-secondary);">Add an API key to enable metadata generation</p>
                                     <button wire:click="openCreateModal" class="btn-primary">
                                         Add API Key
                                     </button>
@@ -171,6 +171,8 @@
                         <label for="provider" class="label">Provider</label>
                         <select id="provider" wire:model="provider" class="input">
                             <option value="gemini">Google Gemini</option>
+                            <option value="groq">Groq AI</option>
+                            <option value="mistral">Mistral AI</option>
                         </select>
                         @error('provider') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
                     </div>

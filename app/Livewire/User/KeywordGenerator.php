@@ -18,10 +18,8 @@ class KeywordGenerator extends Component
     public ?string $error = null;
     public ?string $generatedKeywords = null;
 
-    // Available Gemini models
-    protected array $geminiModels = [
-        'gemini-2.5-flash',
-    ];
+    // Gemini model to use
+    protected string $geminiModel = 'gemini-2.5-flash';
 
     public function generateKeywords(): void
     {
@@ -66,30 +64,26 @@ class KeywordGenerator extends Component
             $lastError = null;
             $response = null;
             $usedApiKey = null;
-            $usedModel = null;
 
-            // Try each API key with each model
+            // Try each API key until one works
             foreach ($apiKeys as $apiKey) {
-                foreach ($this->geminiModels as $model) {
-                    try {
-                        $response = $this->callGeminiApi($apiKey, $model);
-                        $usedApiKey = $apiKey;
-                        $usedModel = $model;
-                        break 2;
-                    } catch (\Exception $e) {
-                        $lastError = $e->getMessage();
-                        
-                        if (str_contains(strtolower($lastError), 'quota') || 
-                            str_contains(strtolower($lastError), 'rate') ||
-                            str_contains(strtolower($lastError), 'limit') ||
-                            str_contains(strtolower($lastError), '429') ||
-                            str_contains(strtolower($lastError), 'exceeded') ||
-                            str_contains(strtolower($lastError), 'resource')) {
-                            continue;
-                        }
-                        
-                        throw $e;
+                try {
+                    $response = $this->callGeminiApi($apiKey, $this->geminiModel);
+                    $usedApiKey = $apiKey;
+                    break;
+                } catch (\Exception $e) {
+                    $lastError = $e->getMessage();
+                    
+                    if (str_contains(strtolower($lastError), 'quota') || 
+                        str_contains(strtolower($lastError), 'rate') ||
+                        str_contains(strtolower($lastError), 'limit') ||
+                        str_contains(strtolower($lastError), '429') ||
+                        str_contains(strtolower($lastError), 'exceeded') ||
+                        str_contains(strtolower($lastError), 'resource')) {
+                        continue;
                     }
+                    
+                    throw $e;
                 }
             }
 

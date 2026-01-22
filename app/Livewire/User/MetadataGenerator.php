@@ -2,9 +2,9 @@
 
 namespace App\Livewire\User;
 
-use App\Models\ApiKey;
+use App\Models\AppSetting;
 use App\Models\MetadataGeneration;
-use Illuminate\Support\Facades\Http;
+use App\Services\AI\AIService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -28,16 +28,30 @@ class MetadataGenerator extends Component
     public int $delaySeconds = 3;
     public string $mode = 'fast'; // 'fast' or 'slow'
     public int $keywordCount = 35;
+    public string $selectedModel = ''; // Selected AI model
     
     // Results
     public array $results = [];
 
-    // Available Gemini models to try (in order of preference)
-    protected array $geminiModels = [
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-    ];
+    // AI Provider
+    protected AIService $aiService;
+
+    public function boot(): void
+    {
+        $this->aiService = app(AIService::class);
+    }
+
+    public function mount(): void
+    {
+        // Set default model based on provider
+        $provider = $this->aiService->getDefaultProvider();
+        $this->selectedModel = $this->aiService->getDefaultModelForProvider($provider);
+    }
+
+    public function updatedSelectedModel(): void
+    {
+        // Model changed, no additional action needed
+    }
 
     public function setImageQueue(array $queue): void
     {
@@ -90,101 +104,50 @@ class MetadataGenerator extends Component
         
         try {
             $user = auth()->user();
-            $apiKeys = collect();
+            $provider = $this->aiService->getDefaultProvider();
             
-            // First, try user's personal API key if they have one
-            if ($user->hasPersonalApiKey()) {
-                // Create a temporary ApiKey-like object for personal key
-                $personalKey = new ApiKey([
-                    'api_key' => $user->gemini_api_key,
-                    'provider' => 'gemini',
-                    'is_active' => true,
-                ]);
-                $personalKey->is_personal = true; // Flag to identify personal key
-                $apiKeys->push($personalKey);
-            }
+            // Build prompt
+            $prompt = $this->buildPrompt();
             
-            // Add shared API keys as fallback
-            $sharedKeys = ApiKey::where('provider', 'gemini')
-                ->where('is_active', true)
-                ->inRandomOrder()
-                ->get();
-            
-            $apiKeys = $apiKeys->concat($sharedKeys);
-            
-            if ($apiKeys->isEmpty()) {
-                throw new \Exception('No active API key available. Please contact administrator.');
-            }
+            // Use AIService to generate metadata
+            $result = $this->aiService->generateMetadata(
+                $base64Data,
+                $mimeType,
+                $prompt,
+                $this->mode,
+                $provider,
+                $this->selectedModel ?: null
+            );
 
-            $lastError = null;
-            $response = null;
-            $usedApiKey = null;
-            $usedModel = null;
-
-            // Try each API key with each model until one works
-            foreach ($apiKeys as $apiKey) {
-                foreach ($this->geminiModels as $model) {
-                    try {
-                        $response = $this->callGeminiApi($apiKey, $base64Data, $mimeType, $model);
-                        $usedApiKey = $apiKey;
-                        $usedModel = $model;
-                        break 2; // Success, exit both loops
-                    } catch (\Exception $e) {
-                        $lastError = $e->getMessage();
-                        
-                        // Check if it's a quota/rate limit error - try next model/key
-                        if (str_contains(strtolower($lastError), 'quota') || 
-                            str_contains(strtolower($lastError), 'rate') ||
-                            str_contains(strtolower($lastError), 'limit') ||
-                            str_contains(strtolower($lastError), '429') ||
-                            str_contains(strtolower($lastError), 'exceeded') ||
-                            str_contains(strtolower($lastError), 'resource')) {
-                            continue; // Try next model
-                        }
-                        
-                        // For other errors, throw immediately
-                        throw $e;
-                    }
-                }
-            }
-
-            // If no API key/model combination worked
-            if (!$response || !$usedApiKey) {
-                throw new \Exception('All API keys and models exhausted. Last error: ' . ($lastError ?? 'Unknown error'));
-            }
-            
-            // Parse response
-            $parsed = $this->parseGeminiResponse($response);
-
-            // Increment API key usage
-            $usedApiKey->incrementUsage();
+            // Validate and trim keywords to match user-specified count
+            $keywords = $this->validateKeywordCount($result['keywords']);
 
             // Save to database for generation count tracking
             MetadataGeneration::create([
                 'user_id' => auth()->id(),
                 'filename' => $filename,
-                'title' => $parsed['title'],
-                'keywords' => $parsed['keywords'],
-                'ai_model' => $usedModel,
+                'title' => $result['title'],
+                'keywords' => $keywords,
+                'ai_model' => $this->selectedModel ?: $provider,
             ]);
             
             // Update queue
             $this->imageQueue[$index]['status'] = 'completed';
-            $this->imageQueue[$index]['title'] = $parsed['title'];
-            $this->imageQueue[$index]['keywords'] = $parsed['keywords'];
+            $this->imageQueue[$index]['title'] = $result['title'];
+            $this->imageQueue[$index]['keywords'] = $keywords;
             
             // Store in results (use placeholder for image since it's in IndexedDB)
             $this->results[$index] = [
                 'filename' => $filename,
-                'title' => $parsed['title'],
-                'keywords' => $parsed['keywords'],
+                'title' => $result['title'],
+                'keywords' => $keywords,
             ];
             
             // Dispatch event to save to IndexedDB history
             $this->dispatch('save-to-history', [
                 'filename' => $filename,
-                'title' => $parsed['title'],
-                'keywords' => $parsed['keywords'],
+                'title' => $result['title'],
+                'keywords' => $result['keywords'],
             ]);
 
         } catch (\Exception $e) {
@@ -247,41 +210,24 @@ class MetadataGenerator extends Component
         $this->dispatch('request-image-data', ['index' => $index]);
     }
 
-    protected function callGeminiApi(ApiKey $apiKey, string $imageData, string $mimeType, string $model = 'gemini-2.0-flash'): array
+    /**
+     * Validate and trim keywords to match user-specified count.
+     * Keywords can be equal to or less than the limit, but never more.
+     */
+    protected function validateKeywordCount(string $keywords): string
     {
-        $prompt = $this->buildPrompt();
-
-        $response = Http::timeout(60)->post(
-            "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey->api_key}",
-            [
-                'contents' => [
-                    [
-                        'parts' => [
-                            [
-                                'inline_data' => [
-                                    'mime_type' => $mimeType,
-                                    'data' => $imageData,
-                                ],
-                            ],
-                            [
-                                'text' => $prompt,
-                            ],
-                        ],
-                    ],
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.7,
-                    'maxOutputTokens' => 2048,
-                ],
-            ]
-        );
-
-        if (!$response->successful()) {
-            $error = $response->json('error.message') ?? 'Failed to generate metadata';
-            throw new \Exception($error);
+        // Split keywords by comma
+        $keywordArray = array_map('trim', explode(',', $keywords));
+        
+        // Remove empty values
+        $keywordArray = array_filter($keywordArray, fn($k) => !empty($k));
+        
+        // Trim to max count if exceeded
+        if (count($keywordArray) > $this->keywordCount) {
+            $keywordArray = array_slice($keywordArray, 0, $this->keywordCount);
         }
-
-        return $response->json();
+        
+        return implode(', ', $keywordArray);
     }
 
     protected function buildPrompt(): string
@@ -289,127 +235,73 @@ class MetadataGenerator extends Component
         $additionalContext = $this->description ? "\n\nAdditional context from user: {$this->description}" : '';
         
         if ($this->mode === 'slow') {
-            // Detailed, descriptive mode
+            // Detailed, high-quality mode with comprehensive prompt
             return <<<PROMPT
-You are an expert stock photography metadata specialist for Adobe Stock, Shutterstock, and Getty Images. Analyze this image thoroughly and generate highly optimized metadata.
+You are an expert Senior Metadata Editor and SEO strategist for a top-tier microstock agency like Getty Images or Adobe Stock. Your primary goal is to maximize the commercial discoverability and sales potential of an image.
 
-1. **Title**: Create a compelling, highly descriptive SEO title (100-180 characters). The title MUST:
-   - Start with the most important subject/element in the image
-   - Include 2-3 descriptive adjectives (colors, emotions, qualities)
-   - Describe the action, setting, or context clearly
-   - Use natural sentence structure with high-value search keywords
-   - Be specific and unique (avoid generic titles)
-   - Include relevant qualifiers (e.g., "professional", "modern", "authentic", "aerial view", "close-up")
-   
-   GOOD EXAMPLES:
-   - "Young professional businesswoman working on laptop in modern coworking space with natural light"
-   - "Golden retriever puppy playing with colorful ball in sunny backyard garden during summer"
-   - "Aerial view of turquoise ocean waves crashing on white sandy tropical beach at sunset"
-   - "Fresh organic vegetables and fruits arranged on rustic wooden table in farmhouse kitchen"
-   
-   BAD EXAMPLES (too generic):
-   - "Woman working" 
-   - "Dog playing"
-   - "Beach view"
+**Analysis & Strategy:**
+Analyze the provided image and generate a highly marketable title and a list of exactly {$this->keywordCount} strategically chosen keywords.
 
-2. **Keywords**: Generate exactly {$this->keywordCount} relevant keywords separated by commas. Keywords should:
-   - Be single words or short phrases (2-3 words max)
-   - Start with the most specific/important terms
-   - Include: main subjects, actions, emotions, colors, styles, compositions, moods, settings
-   - Add synonyms and related search terms
-   - Be highly relevant to stock photography buyers
-   - Be in lowercase
-   - Be ordered by relevance (most relevant first)
-   - NOT include camera/technical terms
+**1. Title Generation (SEO-Optimized, Descriptive):**
+- Create a HIGHLY DESCRIPTIVE, SEO-optimized title in English (120-200 characters).
+- The title must tell a complete story about the image - WHO, WHAT, WHERE, HOW.
+- Structure: [Main Subject] + [Action/State] + [Context/Setting] + [Descriptive Details]
+- Include specific descriptive words: colors, lighting, mood, environment, style.
+- Think from a buyer's perspective: What detailed search query would find this exact image?
+
+**Title Examples:**
+- BAD: "Woman working on laptop" (too short, not descriptive)
+- GOOD: "Professional young businesswoman working on laptop in modern bright office with large windows, focused and confident expression, corporate lifestyle concept"
+- BAD: "Beautiful sunset" (generic, not SEO)
+- GOOD: "Dramatic golden sunset over calm ocean with silhouette of palm trees, tropical paradise vacation destination, warm orange and purple sky"
+
+**2. Keyword Generation (Exactly {$this->keywordCount} Keywords):**
+
+**CRITICAL RULES:**
+- Each keyword MUST be a SINGLE WORD only. No phrases, no compound words with spaces.
+- Examples of VALID keywords: business, laptop, woman, success, professional, office, technology
+- Examples of INVALID keywords: "business woman", "office desk", "working from home" - DO NOT USE THESE
+- Order keywords from MOST relevant to LEAST relevant based on the image content and generated title.
+- The first keywords should directly describe the main subject visible in the image.
+
+- **Prioritization is Key:** The first 10-15 keywords must be the most powerful, high-intent terms that a commercial buyer would use.
+- **Keyword Strategy Mix:**
+    - **Primary Concepts:** The absolute core subject and theme (e.g., 'business', 'technology', 'success').
+    - **Literal Objects & Subjects:** Clearly visible elements (e.g., 'laptop', 'desk', 'woman').
+    - **Action & Emotion:** What is happening and the mood (e.g., 'working', 'smiling', 'focus').
+    - **Composition & Style:** How the shot is composed (e.g., 'copyspace', 'closeup', 'minimalist').
+    - **Abstract & Metaphorical:** Ideas the image represents (e.g., 'growth', 'innovation', 'strategy').
+- **What to AVOID:**
+    - Multi-word phrases (NEVER use phrases like "office worker" - use "office" and "worker" separately)
+    - Do not use subjective or overly generic words ('beautiful', 'nice', 'great').
+    - Avoid spammy or irrelevant terms.
 {$additionalContext}
 
-Respond in this exact JSON format:
-{
-    "title": "Your highly descriptive title here",
-    "keywords": "keyword1, keyword2, keyword3, ..."
-}
-
-Only respond with the JSON, no additional text.
+Output keywords as comma-separated lowercase SINGLE words only, ordered by relevance to the image.
 PROMPT;
         } else {
-            // Fast, SEO-focused mode
+            // Fast mode - optimized prompt for speed
             return <<<PROMPT
-You are a stock photography metadata expert. Analyze this image and generate SEO-optimized metadata.
+You are a stock photo metadata expert for Adobe Stock and Shutterstock. Analyze this image and generate optimized metadata.
 
-1. **Title**: Create a descriptive, SEO-friendly title (80-150 characters). The title should:
-   - Start with the main subject
-   - Include 1-2 descriptive adjectives
-   - Describe what's happening in the image
-   - Use natural keyword-rich language
-   - Be specific (avoid generic descriptions)
-   
-   EXAMPLES:
-   - "Happy young couple enjoying coffee date in cozy cafe with warm lighting"
-   - "Modern minimalist home office workspace with laptop and indoor plants"
-   - "Colorful autumn leaves falling in peaceful forest path at golden hour"
+**Title (SEO-Optimized, Descriptive):**
+- Create a HIGHLY DESCRIPTIVE title (120-200 characters) that tells the complete story.
+- Include: main subject, action/state, setting/context, mood, colors, style.
+- Structure: [Subject] + [Action] + [Context] + [Descriptive Details]
+- Example: "Professional businesswoman typing on laptop in modern office, focused expression, bright natural lighting, corporate workplace concept"
+- AVOID short generic titles like "Woman working" - be SPECIFIC and DETAILED.
 
-2. **Keywords**: Generate exactly {$this->keywordCount} relevant keywords separated by commas. Include subjects, actions, emotions, colors, and style. All lowercase, ordered by relevance.
+**Keywords:** Generate exactly {$this->keywordCount} comma-separated lowercase keywords.
+
+**CRITICAL RULES:**
+- Each keyword MUST be a SINGLE WORD only. NO phrases allowed.
+- VALID: business, laptop, woman, success, office, technology, professional
+- INVALID: "business woman", "office desk", "home office" - NEVER use multi-word phrases
+- Order from MOST relevant to LEAST relevant based on image content and title.
+- First keywords = main visible subjects. Last keywords = abstract concepts.
 {$additionalContext}
-
-Respond in this exact JSON format:
-{
-    "title": "Your descriptive title here",
-    "keywords": "keyword1, keyword2, keyword3, ..."
-}
-
-Only respond with the JSON, no additional text.
 PROMPT;
         }
-    }
-
-    protected function parseGeminiResponse(array $response): array
-    {
-        // Try to get text from response - handle different response structures
-        $text = $response['candidates'][0]['content']['parts'][0]['text'] ?? '';
-        
-        // If no text found, check for other possible structures
-        if (empty($text)) {
-            \Log::error('Gemini response structure:', $response);
-            throw new \Exception('Empty response from AI.');
-        }
-        
-        // Remove markdown code blocks if present (various formats)
-        $text = preg_replace('/^```json\s*/m', '', $text);
-        $text = preg_replace('/^```\s*$/m', '', $text);
-        $text = trim($text);
-
-        // Find the JSON object - look for opening { and find matching closing }
-        $startPos = strpos($text, '{');
-        if ($startPos !== false) {
-            $depth = 0;
-            $endPos = $startPos;
-            for ($i = $startPos; $i < strlen($text); $i++) {
-                if ($text[$i] === '{') $depth++;
-                if ($text[$i] === '}') $depth--;
-                if ($depth === 0) {
-                    $endPos = $i;
-                    break;
-                }
-            }
-            $text = substr($text, $startPos, $endPos - $startPos + 1);
-        }
-
-        $data = json_decode($text, true);
-
-        if (!$data) {
-            \Log::error('Failed to parse JSON. Raw text:', ['text' => $text]);
-            throw new \Exception('Failed to parse AI response. Please try again.');
-        }
-
-        if (!isset($data['title']) || !isset($data['keywords'])) {
-            \Log::error('Missing required fields:', $data);
-            throw new \Exception('AI response missing title or keywords.');
-        }
-
-        return [
-            'title' => $data['title'],
-            'keywords' => $data['keywords'],
-        ];
     }
 
     public function copyToClipboard(int $index, string $type): void
@@ -442,12 +334,16 @@ PROMPT;
     public function render()
     {
         $user = auth()->user();
+        $provider = $this->aiService->getDefaultProvider();
+        $availableModels = $this->aiService->getModelsForProvider($provider);
         
         return view('livewire.user.metadata-generator', [
             'isSubscribed' => $user->isSubscribed(),
             'remainingGenerations' => $user->getRemainingGenerations(),
             'dailyLimit' => $user->getDailyLimit(),
             'canGenerate' => $user->canGenerate(),
+            'currentProvider' => $provider,
+            'availableModels' => $availableModels,
         ]);
     }
 }

@@ -5,8 +5,10 @@ namespace App\Livewire\Admin;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,9 +19,15 @@ class Users extends Component
 {
     use WithPagination;
 
+    #[Url(except: '')]
     public string $search = '';
+    
+    #[Url(except: '')]
     public string $roleFilter = '';
+    
+    #[Url(except: '')]
     public string $subscriptionFilter = '';
+    
     public bool $showModal = false;
     public bool $isEditing = false;
     public ?int $editingUserId = null;
@@ -112,7 +120,6 @@ class Users extends Component
         if ($this->isEditing) {
             $user = User::find($this->editingUserId);
             
-            // If toggling subscription on and it wasn't before, set expiry
             if ($this->is_subscribed && !$user->is_subscribed) {
                 $data['subscription_expires_at'] = Carbon::now()->addDays($this->subscription_days);
             }
@@ -132,7 +139,6 @@ class Users extends Component
     {
         $user = User::findOrFail($userId);
         
-        // Prevent deactivating yourself
         if ($user->id === auth()->id()) {
             return;
         }
@@ -145,13 +151,11 @@ class Users extends Component
         $user = User::findOrFail($userId);
         
         if ($user->is_subscribed) {
-            // Deactivate subscription
             $user->update([
                 'is_subscribed' => false,
                 'subscription_expires_at' => null,
             ]);
         } else {
-            // Activate subscription for default 30 days
             $user->update([
                 'is_subscribed' => true,
                 'subscription_expires_at' => Carbon::now()->addDays(30),
@@ -164,7 +168,7 @@ class Users extends Component
         $user = User::findOrFail($userId);
         
         $baseDate = $user->subscription_expires_at && $user->subscription_expires_at->isFuture() 
-            ? $user->subscription_expires_at 
+            ? $user->subscription_expires_at->copy()
             : Carbon::now();
         
         $user->update([
@@ -187,7 +191,6 @@ class Users extends Component
     {
         $user = User::findOrFail($userId);
         
-        // Prevent deleting yourself
         if ($user->id === auth()->id()) {
             return;
         }
@@ -214,9 +217,11 @@ class Users extends Component
         $this->resetValidation();
     }
 
-    public function render()
+    #[Computed]
+    public function users()
     {
-        $users = User::query()
+        return User::query()
+            ->select(['id', 'name', 'email', 'role', 'is_active', 'is_subscribed', 'subscription_expires_at', 'bonus_credits', 'created_at'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'like', "%{$this->search}%")
@@ -235,9 +240,12 @@ class Users extends Component
             })
             ->latest()
             ->paginate(10);
+    }
 
+    public function render()
+    {
         return view('livewire.admin.users', [
-            'users' => $users,
+            'users' => $this->users,
         ]);
     }
 }

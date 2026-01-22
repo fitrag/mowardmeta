@@ -71,9 +71,10 @@ window.metadataImageUploader = function () {
             this.compressTotal = files.length;
             this.compressProgress = 0;
 
-            const maxWidth = 1920;
-            const maxHeight = 1920;
-            const quality = 0.8;
+            // Optimized settings for faster API processing
+            const maxWidth = 1024;  // Reduced from 1920 for faster uploads
+            const maxHeight = 1024; // Reduced from 1920 for faster uploads
+            const quality = 0.6;    // Reduced from 0.8 for smaller file size
             const thumbnailSize = 200;
 
             for (let i = 0; i < files.length; i++) {
@@ -111,35 +112,35 @@ window.metadataImageUploader = function () {
                 reader.onload = (e) => {
                     const img = new Image();
                     img.onload = async () => {
-                        // Calculate dimensions for main image
+                        // Calculate dimensions for main image (aggressive scaling)
                         let width = img.width;
                         let height = img.height;
 
-                        if (width > maxWidth) {
-                            height = (height * maxWidth) / width;
-                            width = maxWidth;
-                        }
-                        if (height > maxHeight) {
-                            width = (width * maxHeight) / height;
-                            height = maxHeight;
-                        }
+                        // Scale down to fit within maxWidth x maxHeight
+                        const scale = Math.min(maxWidth / width, maxHeight / height, 1);
+                        width = Math.round(width * scale);
+                        height = Math.round(height * scale);
 
-                        // Create main canvas
+                        // Create main canvas with optimized settings
                         const canvas = document.createElement('canvas');
                         canvas.width = width;
                         canvas.height = height;
-                        const ctx = canvas.getContext('2d');
+                        const ctx = canvas.getContext('2d', { alpha: false });
+
+                        // Use faster image rendering for compression
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'medium';
                         ctx.drawImage(img, 0, 0, width, height);
 
                         // Create thumbnail canvas
                         const thumbCanvas = document.createElement('canvas');
                         const thumbRatio = Math.min(thumbnailSize / img.width, thumbnailSize / img.height);
-                        thumbCanvas.width = img.width * thumbRatio;
-                        thumbCanvas.height = img.height * thumbRatio;
+                        thumbCanvas.width = Math.round(img.width * thumbRatio);
+                        thumbCanvas.height = Math.round(img.height * thumbRatio);
                         const thumbCtx = thumbCanvas.getContext('2d');
                         thumbCtx.drawImage(img, 0, 0, thumbCanvas.width, thumbCanvas.height);
 
-                        // Get base64 data
+                        // Get base64 data with optimized quality
                         const base64Data = canvas.toDataURL('image/jpeg', quality).split(',')[1];
                         const thumbnail = thumbCanvas.toDataURL('image/jpeg', 0.7);
 

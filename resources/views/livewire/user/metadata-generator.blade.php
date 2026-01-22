@@ -202,6 +202,23 @@
                                     </button>
                                 </div>
                             </div>
+
+                            <!-- AI Model Selection -->
+                            <div>
+                                <label class="text-xs font-medium uppercase tracking-wide mb-2 block" style="color: var(--text-muted);">
+                                    AI Model 
+                                    <span class="normal-case font-normal">({{ ucfirst($currentProvider) }})</span>
+                                </label>
+                                <select 
+                                    wire:model.live="selectedModel"
+                                    class="input text-sm"
+                                >
+                                    @foreach($availableModels as $modelId => $modelName)
+                                        <option value="{{ $modelId }}">{{ $modelName }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="text-xs mt-1" style="color: var(--text-muted);">Select AI model for generation</p>
+                            </div>
                             
                             <!-- Keyword Count -->
                             <div>

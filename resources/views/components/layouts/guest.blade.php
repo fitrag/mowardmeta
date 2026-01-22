@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'MetaGen' }} - Microstock Metadata Generator</title>
+    <title>{{ $title ?? \App\Models\AppSetting::get('app_name', 'MetaGen') }} - {{ \App\Models\AppSetting::get('app_tagline', 'Microstock Metadata Generator') }}</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
@@ -61,8 +61,8 @@
                 </svg>
             </div>
             <div>
-                <h1 class="font-bold text-2xl" :class="$store.theme.isDark ? 'text-white' : 'text-surface-900'">MetaGen</h1>
-                <p class="text-sm" :class="$store.theme.isDark ? 'text-surface-200' : 'text-surface-500'">Microstock Metadata Generator</p>
+                <h1 class="font-bold text-2xl" :class="$store.theme.isDark ? 'text-white' : 'text-surface-900'">{{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}</h1>
+                <p class="text-sm" :class="$store.theme.isDark ? 'text-surface-200' : 'text-surface-500'">{{ \App\Models\AppSetting::get('app_tagline', 'Microstock Metadata Generator') }}</p>
             </div>
         </div>
 
@@ -73,7 +73,7 @@
 
         <!-- Footer -->
         <p class="mt-8 text-sm relative z-10" :class="$store.theme.isDark ? 'text-surface-200/50' : 'text-surface-400'">
-            &copy; {{ date('Y') }} MetaGen. Powered by AI.
+            &copy; {{ date('Y') }} {{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}. Powered by AI.
         </p>
     </div>
 
