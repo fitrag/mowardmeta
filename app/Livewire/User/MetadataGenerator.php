@@ -122,24 +122,27 @@ class MetadataGenerator extends Component
             // Validate and trim keywords to match user-specified count
             $keywords = $this->validateKeywordCount($result['keywords']);
 
+            // Validate and enforce title length limit (max 180 characters)
+            $title = $this->validateTitleLength($result['title']);
+
             // Save to database for generation count tracking
             MetadataGeneration::create([
                 'user_id' => auth()->id(),
                 'filename' => $filename,
-                'title' => $result['title'],
+                'title' => $title,
                 'keywords' => $keywords,
                 'ai_model' => $this->selectedModel ?: $provider,
             ]);
             
             // Update queue
             $this->imageQueue[$index]['status'] = 'completed';
-            $this->imageQueue[$index]['title'] = $result['title'];
+            $this->imageQueue[$index]['title'] = $title;
             $this->imageQueue[$index]['keywords'] = $keywords;
             
             // Store in results (use placeholder for image since it's in IndexedDB)
             $this->results[$index] = [
                 'filename' => $filename,
-                'title' => $result['title'],
+                'title' => $title,
                 'keywords' => $keywords,
             ];
             
@@ -230,6 +233,29 @@ class MetadataGenerator extends Component
         return implode(', ', $keywordArray);
     }
 
+    /**
+     * Validate and enforce title length limit.
+     * Title must not exceed 180 characters.
+     */
+    protected function validateTitleLength(string $title, int $maxLength = 180): string
+    {
+        $title = trim($title);
+        
+        if (mb_strlen($title) <= $maxLength) {
+            return $title;
+        }
+        
+        // Truncate at last complete word before the limit
+        $truncated = mb_substr($title, 0, $maxLength);
+        $lastSpace = mb_strrpos($truncated, ' ');
+        
+        if ($lastSpace !== false && $lastSpace > $maxLength * 0.7) {
+            $truncated = mb_substr($truncated, 0, $lastSpace);
+        }
+        
+        return rtrim($truncated, ' ,.');
+    }
+
     protected function buildPrompt(): string
     {
         $additionalContext = $this->description ? "\n\nAdditional context from user: {$this->description}" : '';
@@ -243,7 +269,7 @@ You are an expert Senior Metadata Editor and SEO strategist for a top-tier micro
 Analyze the provided image and generate a highly marketable title and a list of exactly {$this->keywordCount} strategically chosen keywords.
 
 **1. Title Generation (SEO-Optimized, Descriptive):**
-- Create a HIGHLY DESCRIPTIVE, SEO-optimized title in English (120-200 characters).
+- Create a HIGHLY DESCRIPTIVE, SEO-optimized title in English (120-180 characters).
 - The title must tell a complete story about the image - WHO, WHAT, WHERE, HOW.
 - Structure: [Main Subject] + [Action/State] + [Context/Setting] + [Descriptive Details]
 - Include specific descriptive words: colors, lighting, mood, environment, style.
@@ -285,7 +311,7 @@ PROMPT;
 You are a stock photo metadata expert for Adobe Stock and Shutterstock. Analyze this image and generate optimized metadata.
 
 **Title (SEO-Optimized, Descriptive):**
-- Create a HIGHLY DESCRIPTIVE title (120-200 characters) that tells the complete story.
+- Create a HIGHLY DESCRIPTIVE title (120-180 characters) that tells the complete story.
 - Include: main subject, action/state, setting/context, mood, colors, style.
 - Structure: [Subject] + [Action] + [Context] + [Descriptive Details]
 - Example: "Professional businesswoman typing on laptop in modern office, focused expression, bright natural lighting, corporate workplace concept"
