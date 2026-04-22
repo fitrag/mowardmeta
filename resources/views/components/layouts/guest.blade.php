@@ -1,9 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-      x-data 
-      :class="$store.theme.isDark ? '' : 'light'"
-      x-init="$store.theme.init('dark')"
->
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,13 +7,11 @@
 
     <title>{{ $title ?? \App\Models\AppSetting::get('app_name', 'MetaGen') }} - {{ \App\Models\AppSetting::get('app_tagline', 'Microstock Metadata Generator') }}</title>
 
-    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     
-    <!-- Prevent flash of wrong theme -->
     <script>
         (function() {
             const theme = localStorage.getItem('theme') || 'dark';
@@ -27,60 +21,41 @@
         })();
     </script>
 </head>
-<body class="min-h-screen font-sans antialiased" :class="$store.theme.isDark ? 'bg-surface-950 text-white' : 'bg-surface-50 text-surface-900'">
-    <div class="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        <!-- Background Effects -->
+<body class="min-h-screen font-sans antialiased">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4 relative">
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute -top-40 -right-40 w-80 h-80 rounded-full blur-3xl" :class="$store.theme.isDark ? 'bg-primary-500/20' : 'bg-primary-500/10'"></div>
-            <div class="absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl" :class="$store.theme.isDark ? 'bg-accent-cyan/20' : 'bg-accent-cyan/10'"></div>
+            <div class="absolute top-1/4 -left-32 w-96 h-96 rounded-full blur-3xl opacity-20" style="background: var(--accent);"></div>
+            <div class="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full blur-3xl opacity-10" style="background: #06b6d4;"></div>
         </div>
 
-        <!-- Theme Toggle -->
         <div class="absolute top-4 right-4 z-20">
-            <button 
-                @click="$store.theme.set($store.theme.isDark ? 'light' : 'dark')"
-                class="p-2 rounded-lg transition-colors"
-                :class="$store.theme.isDark ? 'hover:bg-white/10 text-surface-200' : 'hover:bg-surface-200 text-surface-500'"
-            >
-                <!-- Sun icon for light theme -->
-                <svg x-show="!$store.theme.isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                </svg>
-                <!-- Moon icon for dark theme -->
-                <svg x-show="$store.theme.isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                </svg>
-            </button>
+            <livewire:theme-switcher />
         </div>
 
-        <!-- Logo -->
         <div class="flex items-center gap-3 mb-8 relative z-10">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-cyan flex items-center justify-center">
-                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--accent), #06b6d4);">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
                 </svg>
             </div>
             <div>
-                <h1 class="font-bold text-2xl" :class="$store.theme.isDark ? 'text-white' : 'text-surface-900'">{{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}</h1>
-                <p class="text-sm" :class="$store.theme.isDark ? 'text-surface-200' : 'text-surface-500'">{{ \App\Models\AppSetting::get('app_tagline', 'Microstock Metadata Generator') }}</p>
+                <h1 class="font-semibold text-xl" style="color: var(--text-primary);">{{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}</h1>
+                <p class="text-xs" style="color: var(--text-secondary);">{{ \App\Models\AppSetting::get('app_tagline', 'Microstock Metadata Generator') }}</p>
             </div>
         </div>
 
-        <!-- Content -->
-        <div class="w-full max-w-md relative z-10">
+        <div class="w-full max-w-sm relative z-10">
             {{ $slot }}
         </div>
 
-        <!-- Footer -->
-        <p class="mt-8 text-sm relative z-10" :class="$store.theme.isDark ? 'text-surface-200/50' : 'text-surface-400'">
-            &copy; {{ date('Y') }} {{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}. Powered by AI.
+        <p class="mt-8 text-xs relative z-10" style="color: var(--text-muted);">
+            &copy; {{ date('Y') }} {{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}
         </p>
     </div>
 
     @livewireScripts
     
     <script>
-        // Alpine.js Theme Store
         document.addEventListener('alpine:init', () => {
             Alpine.store('theme', {
                 current: 'dark',
@@ -124,7 +99,7 @@
                     
                     setTimeout(() => {
                         document.documentElement.classList.remove('transitioning');
-                    }, 300);
+                    }, 250);
                 }
             });
         });

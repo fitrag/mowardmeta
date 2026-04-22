@@ -1,9 +1,11 @@
 <div>
     <div class="card animate-fade-in">
-        <h2 class="text-2xl font-bold text-center mb-2">Create account</h2>
-        <p class="text-surface-200 text-center mb-8">Start generating metadata for your stock images</p>
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Create account</h2>
+            <p class="text-sm mt-0.5" style="color: var(--text-secondary);">Start generating metadata for your stock images</p>
+        </div>
 
-        <form wire:submit="register" class="space-y-5">
+        <form wire:submit="register" class="space-y-4">
             <div>
                 <label for="name" class="label">Name</label>
                 <input 
@@ -15,7 +17,7 @@
                     autofocus
                 >
                 @error('name')
-                    <p class="mt-2 text-sm text-red-400">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs" style="color: var(--danger);">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -29,7 +31,7 @@
                     placeholder="you@example.com"
                 >
                 @error('email')
-                    <p class="mt-2 text-sm text-red-400">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs" style="color: var(--danger);">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -43,7 +45,7 @@
                     placeholder="••••••••"
                 >
                 @error('password')
-                    <p class="mt-2 text-sm text-red-400">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs" style="color: var(--danger);">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -67,9 +69,9 @@
             </button>
         </form>
 
-        <p class="mt-6 text-center text-sm text-surface-200">
+        <p class="mt-5 text-center text-sm" style="color: var(--text-secondary);">
             Already have an account? 
-            <a href="{{ route('login') }}" class="text-primary-400 hover:text-primary-300 font-medium" wire:navigate>
+            <a href="{{ route('login') }}" class="font-medium" style="color: var(--accent);" wire:navigate>
                 Sign in
             </a>
         </p>
