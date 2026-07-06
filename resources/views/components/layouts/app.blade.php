@@ -7,18 +7,14 @@
 
     <title>{{ $title ?? \App\Models\AppSetting::get('app_name', 'MetaGen') }} - {{ \App\Models\AppSetting::get('app_tagline', 'Microstock Metadata Generator') }}</title>
 
-    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <!-- Theme initialization - runs before anything else -->
     <script>
-        // Immediately apply theme from localStorage to prevent flash
         (function() {
             function getEffectiveTheme() {
                 const stored = localStorage.getItem('theme') || 'dark';
@@ -35,82 +31,81 @@
                 document.documentElement.classList.remove('light');
             }
             
-            // Store for Alpine to read
             window.__theme = localStorage.getItem('theme') || 'dark';
         })();
     </script>
 </head>
 <body class="min-h-screen font-sans antialiased" x-data x-init="$store.theme.init()">
     <div class="flex min-h-screen">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 -translate-x-full border-r"
-               style="background-color: var(--bg-secondary); border-color: var(--border-color);">
-            <div class="flex flex-col h-full">
-                <!-- Logo -->
-                <div class="flex items-center gap-3 px-8 py-8">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-cyan flex items-center justify-center shadow-lg shadow-primary-500/20">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <aside id="sidebar" 
+               class="fixed inset-y-0 left-0 z-50 flex flex-col"
+               style="background-color: var(--bg-secondary); border-right: 1px solid var(--border-color); width: 256px; transition: width 0.3s ease;"
+               x-data="{ collapsed: localStorage.getItem('sidebar-collapsed') === 'true' }"
+               x-init="applyCollapsed(); $watch('collapsed', val => { localStorage.setItem('sidebar-collapsed', val); applyCollapsed(); })">
+            <div class="flex flex-col h-full overflow-hidden">
+                <div class="flex items-center gap-3 px-4 py-4 flex-shrink-0">
+                    <div class="sidebar-logo w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, var(--accent), #06b6d4);">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
                         </svg>
                     </div>
-                    <div>
-                        <h1 class="font-bold text-xl tracking-tight" style="color: var(--text-primary);">{{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}</h1>
-                        <p class="text-xs font-medium" style="color: var(--text-secondary);">{{ \App\Models\AppSetting::get('app_tagline', 'Metadata Generator') }}</p>
+                    <div class="flex-1 min-w-0 sidebar-header-text">
+                        <h1 class="font-semibold text-sm truncate" style="color: var(--text-primary);">{{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}</h1>
+                        <p class="text-[11px] truncate" style="color: var(--text-muted);">Metadata Generator</p>
                     </div>
                 </div>
 
-                <!-- Navigation -->
-                <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+                <nav class="flex-1 px-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
                     @auth
                         @if(auth()->user()->isAdmin())
-                            <div class="px-4 mt-2 mb-2">
-                                <p class="text-xs font-bold uppercase tracking-wider opacity-50" style="color: var(--text-muted);">Administration</p>
+                            <div class="px-3 mt-3 mb-1.5 sidebar-text">
+                                <p class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--text-muted);">Admin</p>
                             </div>
                             
                             <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" wire:navigate>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                                 </svg>
-                                <span class="font-medium">Dashboard</span>
+                                <span class="sidebar-text">Dashboard</span>
                             </a>
                             
                             <a href="{{ route('admin.users') }}" class="sidebar-link {{ request()->routeIs('admin.users') ? 'active' : '' }}" wire:navigate>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                                 </svg>
-                                <span class="font-medium">Users</span>
+                                <span class="sidebar-text">Users</span>
                             </a>
                             
                             <a href="{{ route('admin.api-keys') }}" class="sidebar-link {{ request()->routeIs('admin.api-keys') ? 'active' : '' }}" wire:navigate>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                                 </svg>
-                                <span class="font-medium">API Keys</span>
+                                <span class="sidebar-text">API Keys</span>
                             </a>
                             
                             @php $pendingOrdersCount = \App\Models\SubscriptionOrder::pending()->count(); @endphp
                             <a href="{{ route('admin.orders') }}" class="sidebar-link {{ request()->routeIs('admin.orders') ? 'active' : '' }}" wire:navigate>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                 </svg>
-                                <span class="font-medium">Orders</span>
+                                <span class="sidebar-text">Orders</span>
                                 @if($pendingOrdersCount > 0)
-                                    <span class="ml-auto px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500">{{ $pendingOrdersCount }}</span>
+                                    <span class="ml-auto px-1.5 py-0.5 text-[10px] font-medium rounded-md badge-warning sidebar-text">{{ $pendingOrdersCount }}</span>
                                 @endif
                             </a>
                             
                             <a href="{{ route('admin.payment-methods') }}" class="sidebar-link {{ request()->routeIs('admin.payment-methods') ? 'active' : '' }}" wire:navigate>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                                 </svg>
-                                <span class="font-medium">Payment Methods</span>
+                                <span class="sidebar-text">Payments</span>
                             </a>
                             
                             <a href="{{ route('admin.subscription-plans') }}" class="sidebar-link {{ request()->routeIs('admin.subscription-plans') ? 'active' : '' }}" wire:navigate>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
-                                <span class="font-medium">Subscription Plans</span>
+                                <span class="sidebar-text">Plans</span>
                             </a>
                             
                             <div class="px-4 mt-4 mb-2">
@@ -167,55 +162,55 @@
                             </a>
                             
                             <a href="{{ route('admin.settings') }}" class="sidebar-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}" wire:navigate>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 </svg>
-                                <span class="font-medium">App Settings</span>
+                                <span class="sidebar-text">Settings</span>
                             </a>
                             
-                            <div class="my-6 border-t mx-4 opacity-50" style="border-color: var(--border-color);"></div>
+                            <div class="my-2 mx-2 sidebar-text" style="border-top: 1px solid var(--border-color);"></div>
                         @endif
 
-                        <div class="px-4 mb-2 {{ auth()->user()->isAdmin() ? '' : 'mt-2' }}">
-                            <p class="text-xs font-bold uppercase tracking-wider opacity-50" style="color: var(--text-muted);">Menu</p>
+                        <div class="px-3 mb-1.5 {{ auth()->user()->isAdmin() ? '' : 'mt-3' }} sidebar-text">
+                            <p class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--text-muted);">Menu</p>
                         </div>
 
                         <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" wire:navigate>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                             </svg>
-                            <span class="font-medium">Dashboard</span>
+                            <span class="sidebar-text">Dashboard</span>
                         </a>
 
                         <a href="{{ route('generate') }}" class="sidebar-link {{ request()->routeIs('generate') ? 'active' : '' }}" wire:navigate>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
-                            <span class="font-medium">Generate Metadata</span>
+                            <span class="sidebar-text">Generate</span>
                         </a>
 
                         <a href="{{ route('keywords') }}" class="sidebar-link {{ request()->routeIs('keywords') ? 'active' : '' }}" wire:navigate>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
                             </svg>
-                            <span class="font-medium">Keyword Generator</span>
+                            <span class="sidebar-text">Keywords</span>
                         </a>
 
                         <a href="{{ route('history') }}" class="sidebar-link {{ request()->routeIs('history') ? 'active' : '' }}" wire:navigate>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <span class="font-medium">History</span>
+                            <span class="sidebar-text">History</span>
                         </a>
 
                         <a href="{{ route('subscription') }}" class="sidebar-link {{ request()->routeIs('subscription') ? 'active' : '' }}" wire:navigate>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                             </svg>
-                            <span class="font-medium">Subscription</span>
+                            <span class="sidebar-text">Subscription</span>
                             @if(!auth()->user()->isSubscribed() && !auth()->user()->isAdmin())
-                                <span class="ml-auto px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500">Free</span>
+                                <span class="ml-auto px-1.5 py-0.5 text-[10px] font-medium rounded-md badge-warning sidebar-text">Free</span>
                             @endif
                         </a>
 
@@ -236,43 +231,38 @@
                         </a>
 
                         <a href="{{ route('settings') }}" class="sidebar-link {{ request()->routeIs('settings') ? 'active' : '' }}" wire:navigate>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
-                            <span class="font-medium">Settings</span>
+                            <span class="sidebar-text">Settings</span>
                         </a>
                     @endauth
                 </nav>
 
-                <!-- User Menu -->
                 @auth
-                <div class="p-4 border-t" style="border-color: var(--border-color);">
-                    <div class="flex items-center gap-3 p-3 rounded-2xl transition-colors group relative" style="background-color: transparent;" onmouseover="this.style.backgroundColor='var(--bg-hover)'" onmouseout="this.style.backgroundColor='transparent'">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-cyan flex items-center justify-center font-bold text-white shadow-md">
+                <div class="p-2 border-t flex-shrink-0" style="border-color: var(--border-color);">
+                    <div class="sidebar-footer flex items-center gap-2 p-1.5 rounded-lg" style="background-color: var(--bg-muted);">
+                        <div class="sidebar-avatar avatar-sm flex-shrink-0">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                                <p class="font-semibold text-sm truncate" style="color: var(--text-primary);">{{ auth()->user()->name }}</p>
+                        <div class="flex-1 min-w-0 sidebar-footer-text">
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-xs font-medium truncate" style="color: var(--text-primary);">{{ auth()->user()->name }}</p>
                                 @if(auth()->user()->isSubscribed())
-                                    <span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-amber-500 to-orange-500 text-white">PRO</span>
+                                    <span class="px-1 py-px text-[9px] font-bold rounded bg-gradient-to-r from-amber-500 to-orange-500 text-white">PRO</span>
                                 @endif
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                <p class="text-xs truncate opacity-70" style="color: var(--text-secondary);">{{ auth()->user()->isAdmin() ? 'Administrator' : 'Online' }}</p>
-                            </div>
+                            <p class="text-[11px] truncate" style="color: var(--text-muted);">{{ auth()->user()->isAdmin() ? 'Admin' : 'User' }}</p>
                         </div>
                         
-                        <!-- Settings / Logout Dropdown Trigger (Simplified for now) -->
-                        <div class="flex items-center gap-1">
+                        <div class="flex items-center gap-0.5 flex-shrink-0 sidebar-footer-actions">
                             <livewire:theme-switcher />
                             
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
-                                <button type="submit" class="p-2 rounded-lg hover:text-red-500 hover:bg-red-500/10 transition-all" style="color: var(--text-muted);" title="Logout">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button type="submit" class="p-1.5 rounded-md transition-colors" style="color: var(--text-muted);" onmouseover="this.style.color='var(--danger)'; this.style.backgroundColor='var(--danger-muted)'" onmouseout="this.style.color='var(--text-muted)'; this.style.backgroundColor='transparent'" title="Logout">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                                     </svg>
                                 </button>
@@ -284,31 +274,40 @@
             </div>
         </aside>
 
-        <!-- Sidebar Overlay (Mobile) -->
+        <button id="sidebar-toggle" 
+                @click="Alpine.$data(document.getElementById('sidebar')).collapsed = !Alpine.$data(document.getElementById('sidebar')).collapsed"
+                class="fixed top-4 z-50 p-1.5 rounded-lg transition-all duration-300"
+                style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-muted); left: 244px;"
+                onmouseover="this.style.backgroundColor='var(--bg-muted)'; this.style.color='var(--text-secondary)'"
+                onmouseout="this.style.backgroundColor='var(--bg-secondary)'; this.style.color='var(--text-muted)'"
+                title="Toggle sidebar">
+            <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+            </svg>
+        </button>
+
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
 
-        <!-- Main Content -->
-        <main class="flex-1 flex flex-col min-h-screen lg:ml-72 transition-all duration-300">
-            <!-- Top Header (Mobile) -->
-            <header class="sticky top-0 z-30 backdrop-blur-xl lg:hidden" 
+        <main id="main-content" class="flex-1 flex flex-col min-h-screen" style="margin-left: 256px; transition: margin-left 0.3s ease;">
+            <!-- Mobile Header -->
+            <header class="sticky top-0 z-30 lg:hidden" 
                     style="background-color: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
                 <div class="flex items-center justify-between px-4 py-3">
-                    <div class="flex items-center gap-4">
-                        <button onclick="toggleSidebar()" class="p-2 rounded-lg transition-colors" style="color: var(--text-secondary);">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleSidebar()" class="p-1.5 rounded-md transition-colors" style="color: var(--text-secondary);" onmouseover="this.style.backgroundColor='var(--bg-muted)'" onmouseout="this.style.backgroundColor='transparent'">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                             </svg>
                         </button>
-                        <h1 class="font-bold text-lg" style="color: var(--text-primary);">{{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}</h1>
+                        <h1 class="font-semibold text-sm" style="color: var(--text-primary);">{{ \App\Models\AppSetting::get('app_name', 'MetaGen') }}</h1>
                     </div>
                     
-                    <!-- Theme Switcher Mobile -->
                     <livewire:theme-switcher />
                 </div>
             </header>
 
-            <!-- Page Content -->
-            <div class="flex-1 p-4 lg:p-8">
+            <!-- Main Content Area -->
+            <div class="flex-1 w-full p-4 lg:p-6">
                 {{ $slot }}
             </div>
         </main>
@@ -317,7 +316,115 @@
     @livewireScripts
     
     <script>
-        // Alpine.js Theme Store - persists in localStorage only
+        function applyCollapsed() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('main-content');
+            const toggle = document.getElementById('sidebar-toggle');
+            if (!sidebar) return;
+            
+            const alpine = Alpine.$data(sidebar);
+            const collapsed = alpine.collapsed;
+            
+            if (collapsed) {
+                sidebar.style.width = '64px';
+                if (main && window.innerWidth >= 1024) {
+                    main.style.marginLeft = '64px';
+                }
+                if (toggle) {
+                    toggle.style.left = '52px';
+                    toggle.querySelector('svg').style.transform = 'rotate(180deg)';
+                }
+                sidebar.querySelectorAll('.sidebar-link').forEach(link => {
+                    link.style.justifyContent = 'center';
+                    link.style.padding = '0.5rem';
+                    link.style.gap = '0';
+                });
+                sidebar.querySelectorAll('.sidebar-link svg').forEach(svg => {
+                    svg.style.margin = '0 auto';
+                });
+                
+                const header = sidebar.querySelector('.flex.items-center.gap-3');
+                if (header) {
+                    header.style.justifyContent = 'center';
+                    header.style.padding = '1rem 0';
+                    header.style.gap = '0';
+                }
+            } else {
+                sidebar.style.width = '256px';
+                if (main && window.innerWidth >= 1024) {
+                    main.style.marginLeft = '256px';
+                }
+                if (toggle) {
+                    toggle.style.left = '244px';
+                    toggle.querySelector('svg').style.transform = 'rotate(0deg)';
+                }
+                sidebar.querySelectorAll('.sidebar-link').forEach(link => {
+                    link.style.justifyContent = 'flex-start';
+                    link.style.padding = '0.5rem 0.75rem';
+                    link.style.gap = '';
+                });
+                sidebar.querySelectorAll('.sidebar-link svg').forEach(svg => {
+                    svg.style.margin = '';
+                });
+                
+                const header = sidebar.querySelector('.flex.items-center.gap-3');
+                if (header) {
+                    header.style.justifyContent = 'flex-start';
+                    header.style.padding = '1rem';
+                    header.style.gap = '0.75rem';
+                }
+            }
+            
+            const navTexts = sidebar.querySelectorAll('nav .sidebar-text');
+            navTexts.forEach(el => {
+                el.style.display = collapsed ? 'none' : 'inline';
+            });
+            
+            const headerTexts = sidebar.querySelectorAll('.sidebar-header-text');
+            headerTexts.forEach(el => {
+                el.style.display = collapsed ? 'none' : 'block';
+            });
+            
+            const logos = sidebar.querySelectorAll('.sidebar-logo');
+            logos.forEach(el => {
+                el.style.margin = collapsed ? '0 auto' : '0';
+            });
+            
+            const header = sidebar.querySelector('.flex.items-center.gap-3');
+            if (header) {
+                if (collapsed) {
+                    header.style.justifyContent = 'center';
+                    header.style.paddingLeft = '0';
+                    header.style.paddingRight = '0';
+                    header.style.gap = '0';
+                } else {
+                    header.style.justifyContent = 'flex-start';
+                    header.style.paddingLeft = '1rem';
+                    header.style.paddingRight = '1rem';
+                    header.style.gap = '0.75rem';
+                }
+            }
+            
+            const footerTexts = sidebar.querySelectorAll('.sidebar-footer-text, .sidebar-footer-actions');
+            footerTexts.forEach(el => {
+                el.style.display = collapsed ? 'none' : 'flex';
+            });
+            
+            const footer = sidebar.querySelector('.sidebar-footer');
+            if (footer) {
+                if (collapsed) {
+                    footer.style.justifyContent = 'center';
+                } else {
+                    footer.style.justifyContent = 'flex-start';
+                }
+            }
+            
+            const avatars = sidebar.querySelectorAll('.sidebar-avatar');
+            avatars.forEach(el => {
+                el.style.margin = collapsed ? '0' : '0';
+            });
+        }
+        
         document.addEventListener('alpine:init', () => {
             Alpine.store('theme', {
                 current: window.__theme || 'dark',
@@ -330,16 +437,16 @@
                 },
                 
                 init() {
-                    // Read from localStorage
                     this.current = localStorage.getItem('theme') || 'dark';
                     this.applyTheme();
                     
-                    // Listen for system theme changes
                     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
                         if (this.current === 'system') {
                             this.applyTheme();
                         }
                     });
+                    
+                    setTimeout(applyCollapsed, 50);
                 },
                 
                 set(theme) {
@@ -351,7 +458,6 @@
                 applyTheme() {
                     const isDark = this.isDark;
                     
-                    // Add transition class
                     document.documentElement.classList.add('transitioning');
                     
                     if (isDark) {
@@ -360,20 +466,17 @@
                         document.documentElement.classList.add('light');
                     }
                     
-                    // Remove transition class after animation
                     setTimeout(() => {
                         document.documentElement.classList.remove('transitioning');
-                    }, 300);
+                    }, 250);
                 }
             });
         });
         
-        // Re-apply theme on Livewire navigate (this is the key fix!)
         document.addEventListener('livewire:navigated', () => {
             if (window.Alpine && Alpine.store('theme')) {
                 Alpine.store('theme').applyTheme();
             } else {
-                // Fallback: apply directly from localStorage
                 const stored = localStorage.getItem('theme') || 'dark';
                 let isDark = stored === 'dark';
                 if (stored === 'system') {
@@ -385,6 +488,7 @@
                     document.documentElement.classList.add('light');
                 }
             }
+            setTimeout(applyCollapsed, 50);
         });
         
         function toggleSidebar() {
@@ -395,17 +499,16 @@
             overlay.classList.toggle('hidden');
         }
         
-        // SweetAlert2 Custom Theme Configuration - Only declare once
         if (typeof window.SwalTheme === 'undefined') {
         window.SwalTheme = {
             getColors() {
                 const isLight = document.documentElement.classList.contains('light');
                 return {
-                    background: isLight ? '#ffffff' : '#1a1b23',
-                    text: isLight ? '#1f2937' : '#ffffff',
-                    confirmButton: '#8b5cf6',
-                    cancelButton: isLight ? '#6b7280' : '#374151',
-                    border: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'
+                    background: isLight ? '#ffffff' : '#18181b',
+                    text: isLight ? '#18181b' : '#fafafa',
+                    confirmButton: '#6366f1',
+                    cancelButton: isLight ? '#71717a' : '#3f3f46',
+                    border: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'
                 };
             },
             
@@ -464,15 +567,14 @@
             }
         };
         
-        // Toast Configuration
         window._Toast = Swal.mixin({
             toast: true,
             position: 'bottom-end',
             showConfirmButton: false,
             timer: 2500,
             timerProgressBar: true,
-            background: document.documentElement.classList.contains('light') ? '#ffffff' : '#1a1b23',
-            color: document.documentElement.classList.contains('light') ? '#1f2937' : '#ffffff',
+            background: document.documentElement.classList.contains('light') ? '#ffffff' : '#18181b',
+            color: document.documentElement.classList.contains('light') ? '#18181b' : '#fafafa',
             customClass: {
                 popup: 'swal-toast-popup',
             },
@@ -482,76 +584,73 @@
             }
         });
         
-        // Global toast function
         window.showToast = function(message, type = 'success') {
             const isLight = document.documentElement.classList.contains('light');
             window._Toast.fire({
                 icon: type,
                 title: message,
-                background: isLight ? '#ffffff' : '#1a1b23',
-                color: isLight ? '#1f2937' : '#ffffff',
+                background: isLight ? '#ffffff' : '#18181b',
+                color: isLight ? '#18181b' : '#fafafa',
             });
         };
         
-        // Global confirm function
         window.showConfirm = async function(options = {}) {
             const result = await window.SwalTheme.confirm(options);
             return result.isConfirmed;
         };
-        } // End of if (typeof window.SwalTheme === 'undefined')
+        }
     </script>
     
     <style>
         .swal-themed-popup {
-            border-radius: 1rem !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.4) !important;
         }
         .light .swal-themed-popup {
-            border: 1px solid rgba(0,0,0,0.1) !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.12) !important;
         }
         .swal-toast-popup {
-            border-radius: 0.75rem !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3) !important;
+            border-radius: 10px !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.3) !important;
         }
         .light .swal-toast-popup {
-            border: 1px solid rgba(0,0,0,0.1) !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid rgba(0,0,0,0.08) !important;
+            box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08) !important;
         }
         .swal-confirm-btn {
-            background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
+            background-color: #6366f1 !important;
             color: white !important;
-            padding: 0.625rem 1.5rem !important;
-            border-radius: 0.75rem !important;
+            padding: 0.5rem 1.25rem !important;
+            border-radius: 8px !important;
             font-weight: 500 !important;
-            font-size: 0.875rem !important;
+            font-size: 0.8125rem !important;
             border: none !important;
             cursor: pointer !important;
-            transition: all 0.2s !important;
+            transition: all 0.15s !important;
             margin-left: 0.5rem !important;
         }
         .swal-confirm-btn:hover {
             opacity: 0.9 !important;
-            transform: translateY(-1px) !important;
         }
         .swal-cancel-btn {
-            background: rgba(107, 114, 128, 0.2) !important;
-            color: #9ca3af !important;
-            padding: 0.625rem 1.5rem !important;
-            border-radius: 0.75rem !important;
+            background-color: var(--bg-muted) !important;
+            color: var(--text-secondary) !important;
+            padding: 0.5rem 1.25rem !important;
+            border-radius: 8px !important;
             font-weight: 500 !important;
-            font-size: 0.875rem !important;
-            border: 1px solid rgba(107, 114, 128, 0.3) !important;
+            font-size: 0.8125rem !important;
+            border: 1px solid var(--border-color) !important;
             cursor: pointer !important;
-            transition: all 0.2s !important;
+            transition: all 0.15s !important;
         }
         .swal-cancel-btn:hover {
-            background: rgba(107, 114, 128, 0.3) !important;
+            background-color: var(--bg-card) !important;
         }
         .swal2-icon {
-            border-color: rgba(139, 92, 246, 0.3) !important;
+            border-color: rgba(99, 102, 241, 0.3) !important;
         }
         .swal2-icon.swal2-success {
             border-color: rgba(16, 185, 129, 0.3) !important;
@@ -573,7 +672,7 @@
             background-color: #ef4444 !important;
         }
         .swal2-timer-progress-bar {
-            background: linear-gradient(135deg, #8b5cf6, #06b6d4) !important;
+            background: linear-gradient(135deg, #6366f1, #06b6d4) !important;
         }
     </style>
 </body>

@@ -13,9 +13,9 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Total Generations -->
-        <div class="p-4 sm:p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1" 
+        <div class="p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1" 
              style="background-color: var(--bg-card); border-color: var(--border-color);">
             <div class="flex items-center justify-between mb-3 sm:mb-4">
                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
@@ -30,7 +30,7 @@
         </div>
 
         <!-- Today's Activity -->
-        <div class="p-4 sm:p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1" 
+        <div class="p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1" 
              style="background-color: var(--bg-card); border-color: var(--border-color);">
             <div class="flex items-center justify-between mb-3 sm:mb-4">
                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
@@ -45,7 +45,7 @@
         </div>
 
         <!-- Active Licenses -->
-        <a href="{{ route('licenses') }}" class="p-4 sm:p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1 block" 
+        <a href="{{ route('licenses') }}" class="p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1 block" 
            style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
             <div class="flex items-center justify-between mb-3 sm:mb-4">
                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
@@ -60,7 +60,7 @@
         </a>
 
         <!-- My Products -->
-        <a href="{{ route('products') }}" class="p-4 sm:p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1 block" 
+        <a href="{{ route('products') }}" class="p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1 block" 
            style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
             <div class="flex items-center justify-between mb-3 sm:mb-4">
                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
@@ -273,53 +273,72 @@
             @endif
         </div>
 
-        <!-- Quick Actions -->
-        <div>
-            <h2 class="text-base sm:text-lg font-bold mb-4 sm:mb-6" style="color: var(--text-primary);">Quick Actions</h2>
-            <div class="space-y-3 sm:space-y-4">
-                <a href="{{ route('generate') }}" class="block p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:border-primary-500 hover:shadow-lg group" 
-                   style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-cyan flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-primary-500/20 group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        <!-- Right Column -->
+        <div class="space-y-4">
+            <!-- Quick Actions -->
+            <div>
+                <h2 class="text-sm font-semibold mb-3" style="color: var(--text-primary);">Quick Actions</h2>
+                <div class="space-y-2">
+                    <a href="{{ route('generate') }}" class="flex items-center gap-3 p-3 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98]" style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, var(--accent), #06b6d4);">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-semibold" style="color: var(--text-primary);">New Generation</h3>
+                            <p class="text-[11px]" style="color: var(--text-muted);">Upload images & generate metadata</p>
+                        </div>
+                        <svg class="w-4 h-4 flex-shrink-0" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
-                    </div>
-                    <h3 class="font-bold text-sm sm:text-lg mb-1" style="color: var(--text-primary);">New Generation</h3>
-                    <p class="text-xs sm:text-sm" style="color: var(--text-secondary);">Upload images and generate metadata</p>
-                </a>
+                    </a>
 
-                <a href="{{ route('licenses') }}" class="block p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:border-purple-500 hover:shadow-lg group" 
-                   style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                    <a href="{{ route('keywords') }}" class="flex items-center gap-3 p-3 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98]" style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--accent-muted);">
+                            <svg class="w-5 h-5" style="color: var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-semibold" style="color: var(--text-primary);">Keyword Generator</h3>
+                            <p class="text-[11px]" style="color: var(--text-muted);">Generate keywords from title</p>
+                        </div>
+                        <svg class="w-4 h-4 flex-shrink-0" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
-                    </div>
-                    <h3 class="font-bold text-sm sm:text-lg mb-1" style="color: var(--text-primary);">License Store</h3>
-                    <p class="text-xs sm:text-sm" style="color: var(--text-secondary);">Purchase and manage licenses</p>
-                </a>
+                    </a>
 
-                <a href="{{ route('products') }}" class="block p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:border-cyan-500 hover:shadow-lg group" 
-                   style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    <a href="{{ route('history') }}" class="flex items-center gap-3 p-3 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98]" style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--bg-muted);">
+                            <svg class="w-5 h-5" style="color: var(--text-secondary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-semibold" style="color: var(--text-primary);">View History</h3>
+                            <p class="text-[11px]" style="color: var(--text-muted);">Browse past generations</p>
+                        </div>
+                        <svg class="w-4 h-4 flex-shrink-0" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
-                    </div>
-                    <h3 class="font-bold text-sm sm:text-lg mb-1" style="color: var(--text-primary);">Product Store</h3>
-                    <p class="text-xs sm:text-sm" style="color: var(--text-secondary);">Browse and download products</p>
-                </a>
+                    </a>
+                </div>
+            </div>
 
-                <a href="{{ route('history') }}" class="block p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:border-primary-500 hover:shadow-lg group" 
-                   style="background-color: var(--bg-card); border-color: var(--border-color);" wire:navigate>
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform" style="background-color: var(--bg-hover);">
-                        <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--text-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <!-- Tips Card -->
+            <div class="card" style="border-color: var(--accent-muted);">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background-color: var(--accent-muted);">
+                        <svg class="w-3.5 h-3.5" style="color: var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
-                    <h3 class="font-bold text-sm sm:text-lg mb-1" style="color: var(--text-primary);">View History</h3>
-                    <p class="text-xs sm:text-sm" style="color: var(--text-secondary);">Browse past generations</p>
-                </a>
+                    <h3 class="text-sm font-semibold" style="color: var(--text-primary);">Pro Tip</h3>
+                </div>
+                <p class="text-xs leading-relaxed" style="color: var(--text-secondary);">
+                    Use high-quality images with clear subjects for the best metadata generation results. The AI analyzes visual elements to create accurate titles and keywords.
+                </p>
             </div>
         </div>
     </div>
