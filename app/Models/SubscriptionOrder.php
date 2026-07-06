@@ -17,6 +17,9 @@ class SubscriptionOrder extends Model
         'admin_notes',
         'processed_at',
         'processed_by',
+        'pakasir_order_id',
+        'pakasir_payment_number',
+        'total_payment',
     ];
 
     protected function casts(): array
@@ -26,6 +29,7 @@ class SubscriptionOrder extends Model
             'subscription_plan_id' => 'integer',
             'payment_method_id' => 'integer',
             'processed_by' => 'integer',
+            'total_payment' => 'decimal:2',
         ];
     }
 

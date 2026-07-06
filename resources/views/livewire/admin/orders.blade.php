@@ -105,11 +105,11 @@
                                 </div>
                             </td>
                             <td class="px-4 py-3">
-                                <p class="text-sm font-medium" style="color: var(--text-primary);">{{ $order->subscriptionPlan->name }}</p>
+                                <p class="text-sm font-medium" style="color: var(--text-primary);">{{ $order->subscriptionPlan->name ?? 'N/A' }}</p>
                                 <p class="text-xs" style="color: var(--accent);">{{ $order->subscriptionPlan->formatted_price }}</p>
                             </td>
                             <td class="px-4 py-3 hidden md:table-cell">
-                                <p class="text-sm" style="color: var(--text-secondary);">{{ $order->paymentMethod->name }}</p>
+                                <p class="text-sm" style="color: var(--text-secondary);">{{ $order->paymentMethod->name ?? $order->pakasir_order_id ? 'QRIS (Pakasir)' : '-' }}</p>
                             </td>
                             <td class="px-4 py-3 hidden lg:table-cell">
                                 <p class="text-sm" style="color: var(--text-secondary);">{{ $order->created_at->format('d M Y') }}</p>
@@ -186,15 +186,25 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div class="p-4 rounded-xl" style="background-color: var(--bg-muted);">
                             <p class="text-[11px] font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted);">Plan</p>
-                            <p class="text-sm font-medium" style="color: var(--text-primary);">{{ $viewingOrder->subscriptionPlan->name }}</p>
-                            <p class="text-lg font-bold mt-1" style="color: var(--accent);">{{ $viewingOrder->subscriptionPlan->formatted_price }}</p>
-                            <p class="text-[11px] mt-1" style="color: var(--text-muted);">{{ $viewingOrder->subscriptionPlan->duration_days }} days</p>
+                            <p class="text-sm font-medium" style="color: var(--text-primary);">{{ $viewingOrder->subscriptionPlan->name ?? 'N/A' }}</p>
+                            <p class="text-lg font-bold mt-1" style="color: var(--accent);">{{ $viewingOrder->subscriptionPlan->formatted_price ?? '-' }}</p>
+                            <p class="text-[11px] mt-1" style="color: var(--text-muted);">{{ $viewingOrder->subscriptionPlan->duration_days ?? '-' }} days</p>
                         </div>
                         <div class="p-4 rounded-xl" style="background-color: var(--bg-muted);">
                             <p class="text-[11px] font-semibold uppercase tracking-wide mb-2" style="color: var(--text-muted);">Payment Method</p>
-                            <p class="text-sm font-medium" style="color: var(--text-primary);">{{ $viewingOrder->paymentMethod->name }}</p>
-                            <p class="text-xs font-mono mt-1" style="color: var(--text-muted);">{{ $viewingOrder->paymentMethod->account_number }}</p>
-                            <p class="text-[11px] mt-1" style="color: var(--text-muted);">{{ $viewingOrder->paymentMethod->account_holder_name }}</p>
+                            @if($viewingOrder->paymentMethod)
+                                <p class="text-sm font-medium" style="color: var(--text-primary);">{{ $viewingOrder->paymentMethod->name }}</p>
+                                <p class="text-xs font-mono mt-1" style="color: var(--text-muted);">{{ $viewingOrder->paymentMethod->account_number }}</p>
+                                <p class="text-[11px] mt-1" style="color: var(--text-muted);">{{ $viewingOrder->paymentMethod->account_holder_name }}</p>
+                            @else
+                                <p class="text-sm font-medium" style="color: var(--text-primary);">QRIS (Pakasir)</p>
+                                @if($viewingOrder->pakasir_order_id)
+                                    <p class="text-xs font-mono mt-1" style="color: var(--text-muted);">Order ID: {{ $viewingOrder->pakasir_order_id }}</p>
+                                    @if($viewingOrder->total_payment)
+                                        <p class="text-[11px] mt-1" style="color: var(--text-muted);">Total: Rp {{ number_format($viewingOrder->total_payment, 0, ',', '.') }}</p>
+                                    @endif
+                                @endif
+                            @endif
                         </div>
                     </div>
 

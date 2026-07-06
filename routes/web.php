@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\LogoutController;
+use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\SocialiteController;
+use App\Http\Controllers\WebhookController;
 use App\Livewire\Admin\ApiKeys;
 use App\Livewire\Admin\AppSettings;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
@@ -101,3 +103,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/product-orders', ProductOrders::class)->name('admin.product-orders');
     Route::get('/settings', AppSettings::class)->name('admin.settings');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Webhook Routes (public, no auth)
+|--------------------------------------------------------------------------
+*/
+Route::post('/webhook/pakasir', [WebhookController::class, 'pakasir'])->name('webhook.pakasir');
+Route::get('/qr-code', [QrCodeController::class, 'generate'])->name('qr-code');

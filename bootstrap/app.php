@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'active' => \App\Http\Middleware\ActiveUserMiddleware::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'webhook/pakasir',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
