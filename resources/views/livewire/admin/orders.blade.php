@@ -11,11 +11,7 @@
     </div>
 
     <!-- Status Summary -->
-    @php
-        $approvedCount = \App\Models\SubscriptionOrder::approved()->count();
-        $rejectedCount = \App\Models\SubscriptionOrder::rejected()->count();
-    @endphp
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div class="card p-3">
             <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background-color: var(--warning-muted);">

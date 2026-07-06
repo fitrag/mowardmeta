@@ -50,9 +50,9 @@
                                     wire:model="settings.{{ $setting['key'] }}"
                                     class="input text-sm"
                                 >
-                                    <option value="gemini">Google Gemini</option>
-                                    <option value="groq">Groq AI</option>
-                                    <option value="mistral">Mistral AI</option>
+                                    @foreach($availableProviders as $key => $label)
+                                        <option value="{{ $key }}">{{ $label }}</option>
+                                    @endforeach
                                 </select>
                             @else
                                 <input
@@ -72,7 +72,7 @@
             </div>
         @endforeach
 
-        <div class="flex justify-end">
+        <div class="flex flex-col sm:flex-row sm:justify-end gap-2">
             <button type="submit" class="btn-primary text-sm">
                 <span wire:loading.remove wire:target="save">Save Settings</span>
                 <span wire:loading wire:target="save">Saving...</span>

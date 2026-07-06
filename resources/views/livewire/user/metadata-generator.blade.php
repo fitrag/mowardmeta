@@ -106,7 +106,7 @@
                             </button>
                         </div>
                         
-                        <div class="grid grid-cols-5 gap-2">
+                        <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
                             <template x-for="(img, index) in localImages" :key="img.id">
                                 <div class="relative aspect-square group rounded-lg overflow-hidden" style="background-color: var(--bg-muted);">
                                     <img :src="img.thumbnail" alt="" class="w-full h-full object-cover">
@@ -359,7 +359,7 @@
                     </div>
                 @endif
                 
-                <div class="space-y-3 max-h-[800px] overflow-y-auto pr-1">
+                <div class="space-y-3 max-h-[50vh] lg:max-h-[800px] overflow-y-auto pr-1">
                     @foreach($results as $index => $result)
                         <div class="rounded-xl overflow-hidden" style="border: 1px solid var(--border-color); background-color: var(--bg-card);">
                             <div class="flex items-start gap-3 p-3" style="border-bottom: 1px solid var(--border-color); background-color: var(--bg-muted);">

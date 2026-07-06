@@ -1,17 +1,19 @@
 <div class="space-y-6">
-    <!-- Header -->
     <div class="section-header">
         <h1>Admin Dashboard</h1>
         <p>Monitor system statistics and recent activities</p>
     </div>
 
-    <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <div class="card group hover:border-primary-500/30 transition-colors">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-primary-500/20 flex items-center justify-center group-hover:bg-primary-500/30 transition-colors">
-                    <svg class="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+        <div class="card p-4">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-[11px] font-medium uppercase tracking-wide" style="color: var(--text-muted);">Total Users</p>
+                    <p class="text-2xl font-bold mt-1" style="color: var(--text-primary);">{{ number_format($totalUsers) }}</p>
+                </div>
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: var(--accent-muted);">
+                    <svg class="w-4 h-4" style="color: var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                     </svg>
                 </div>
             </div>
@@ -55,9 +57,7 @@
             </div>
         </div>
 
-        @php
-            $pendingOrdersCount = \App\Models\SubscriptionOrder::pending()->count();
-        @endphp
+        @php $pendingOrdersCount = \App\Models\SubscriptionOrder::pending()->count(); @endphp
         <div class="card p-4">
             <div class="flex items-start justify-between">
                 <div>
@@ -76,9 +76,42 @@
                 </a>
             </div>
         </div>
+
+        <div class="card p-4">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-[11px] font-medium uppercase tracking-wide" style="color: var(--text-muted);">Active Licenses</p>
+                    <p class="text-2xl font-bold mt-1" style="color: var(--text-primary);">{{ number_format($activeLicenses) }}</p>
+                </div>
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: var(--success-muted);">
+                    <svg class="w-4 h-4" style="color: var(--success);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="text-[11px]" style="color: var(--text-muted);">Active license keys</span>
+            </div>
+        </div>
+
+        <a href="{{ route('admin.license-orders') }}" class="card p-4 group transition-colors" style="border-color: var(--border-color);" wire:navigate>
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-[11px] font-medium uppercase tracking-wide" style="color: var(--text-muted);">Pending License Orders</p>
+                    <p class="text-2xl font-bold mt-1" style="color: {{ $pendingLicenseOrders > 0 ? '#f59e0b' : 'var(--text-primary)' }};">{{ number_format($pendingLicenseOrders) }}</p>
+                </div>
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: var(--warning-muted);">
+                    <svg class="w-4 h-4" style="color: var(--warning);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="text-[11px]" style="color: var(--accent);">View details &rarr;</span>
+            </div>
+        </a>
     </div>
 
-    <!-- Quick Actions -->
     <div>
         <h2 class="text-sm font-semibold mb-3" style="color: var(--text-primary);">Quick Access</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -137,39 +170,9 @@
                 <span class="text-xs font-medium" style="color: var(--text-primary);">Settings</span>
             </a>
         </div>
-
-        <div class="card group hover:border-purple-500/30 transition-colors">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 transition-colors">
-                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm" style="color: var(--text-secondary);">Active Licenses</p>
-                    <p class="text-2xl font-bold" style="color: var(--text-primary);">{{ number_format($activeLicenses) }}</p>
-                </div>
-            </div>
-        </div>
-
-        <a href="{{ route('admin.license-orders') }}" class="card group hover:border-orange-500/30 transition-colors" wire:navigate>
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center group-hover:bg-orange-500/30 transition-colors">
-                    <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm" style="color: var(--text-secondary);">Pending Orders</p>
-                    <p class="text-2xl font-bold {{ $pendingLicenseOrders > 0 ? 'text-orange-500' : '' }}" style="{{ $pendingLicenseOrders == 0 ? 'color: var(--text-primary);' : '' }}">{{ number_format($pendingLicenseOrders) }}</p>
-                </div>
-            </div>
-        </a>
     </div>
 
-    <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <!-- Recent Users -->
         <div class="lg:col-span-2">
             <div class="card">
                 <div class="flex items-center justify-between mb-4">
@@ -220,9 +223,7 @@
             </div>
         </div>
 
-        <!-- Side Column -->
         <div class="space-y-4">
-            <!-- Recent Generations -->
             <div class="card">
                 <div class="flex items-center justify-between mb-4">
                     <div>
@@ -257,7 +258,6 @@
                 </div>
             </div>
 
-            <!-- System Status -->
             <div class="card" style="border-color: var(--success-muted);">
                 <div class="flex items-center gap-2 mb-3">
                     <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>

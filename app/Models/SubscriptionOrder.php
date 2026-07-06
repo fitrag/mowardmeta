@@ -23,6 +23,9 @@ class SubscriptionOrder extends Model
     {
         return [
             'processed_at' => 'datetime',
+            'subscription_plan_id' => 'integer',
+            'payment_method_id' => 'integer',
+            'processed_by' => 'integer',
         ];
     }
 
@@ -111,7 +114,7 @@ class SubscriptionOrder extends Model
      */
     public function getStatusColorAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'pending' => 'amber',
             'approved' => 'emerald',
             'rejected' => 'red',
@@ -124,7 +127,7 @@ class SubscriptionOrder extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'pending' => 'Pending',
             'approved' => 'Approved',
             'rejected' => 'Rejected',

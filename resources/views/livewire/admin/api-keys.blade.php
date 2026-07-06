@@ -54,7 +54,9 @@
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium" style="color: var(--text-primary);">{{ $apiKey->name }}</p>
-                                        <p class="text-xs" style="color: var(--text-muted);">{{ ucfirst($apiKey->provider) }}</p>
+                                        <p class="text-xs" style="color: var(--text-muted);">
+                                            {{ $apiKey->is_custom ? 'Custom: '.($apiKey->base_url ?? 'N/A') : ucfirst($apiKey->provider) }}
+                                        </p>
                                     </div>
                                 </div>
                             </td>
@@ -137,7 +139,7 @@
         <div class="modal-overlay">
             <div class="modal-backdrop" wire:click="closeModal"></div>
             
-            <div class="modal-content">
+            <div class="modal-content w-full max-w-md">
                 <h2 class="text-base font-semibold mb-5" style="color: var(--text-primary);">
                     {{ $isEditing ? 'Edit API Key' : 'Add New API Key' }}
                 </h2>
@@ -151,19 +153,47 @@
 
                     <div>
                         <label for="api_key" class="label">API Key</label>
-                        <input type="text" id="api_key" wire:model="api_key" class="input font-mono text-sm" placeholder="AIzaSy...">
+                        <input type="text" id="api_key" wire:model="api_key" class="input font-mono text-sm" placeholder="sk-...">
                         @error('api_key') <p class="mt-1 text-xs" style="color: var(--danger);">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
                         <label for="provider" class="label">Provider</label>
-                        <select id="provider" wire:model="provider" class="input">
+                        <select id="provider" wire:model="provider" wire:change="$set('is_custom', $event.target.value === 'custom')" class="input">
                             <option value="gemini">Google Gemini</option>
                             <option value="groq">Groq AI</option>
                             <option value="mistral">Mistral AI</option>
+                            <option value="kie">Kie AI</option>
+                            <option value="custom">Custom (OpenAI Compatible)</option>
                         </select>
                         @error('provider') <p class="mt-1 text-xs" style="color: var(--danger);">{{ $message }}</p> @enderror
                     </div>
+
+                    @if($is_custom)
+                        <div class="p-3 rounded-lg" style="background-color: var(--bg-muted);">
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg class="w-4 h-4" style="color: var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span class="text-xs font-medium" style="color: var(--accent);">Custom Provider Configuration</span>
+                            </div>
+                            <p class="text-xs" style="color: var(--text-muted);">
+                                Enter your OpenAI-compatible API endpoint. The system will automatically append <code class="px-1 py-0.5 rounded text-xs" style="background-color: var(--bg-input);">/chat/completions</code> if not present.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="base_url" class="label">Base URL</label>
+                            <input type="url" id="base_url" wire:model="base_url" class="input font-mono text-sm" placeholder="https://api.example.com/v1">
+                            @error('base_url') <p class="mt-1 text-xs" style="color: var(--danger);">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label for="models" class="label">Models (JSON or one per line)</label>
+                            <textarea id="models" wire:model="models" class="input font-mono text-sm min-h-[100px]" placeholder='[{"name": "gpt-4", "label": "GPT-4"}]&#10;&#10;Or simply:&#10;gpt-4&#10;gpt-3.5-turbo'></textarea>
+                            @error('models') <p class="mt-1 text-xs" style="color: var(--danger);">{{ $message }}</p> @enderror
+                        </div>
+                    @endif
 
                     <div>
                         <label class="flex items-center gap-2 cursor-pointer">

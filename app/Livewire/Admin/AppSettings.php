@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\AppSetting;
+use App\Services\AI\AIService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -12,6 +13,7 @@ use Livewire\Component;
 class AppSettings extends Component
 {
     public array $settings = [];
+
     public ?string $message = null;
 
     public function mount(): void
@@ -40,9 +42,11 @@ class AppSettings extends Component
     public function render()
     {
         $groupedSettings = AppSetting::getAllGrouped();
-        
+        $availableProviders = (new AIService)->getAvailableProviders();
+
         return view('livewire.admin.app-settings', [
             'groupedSettings' => $groupedSettings,
+            'availableProviders' => $availableProviders,
         ]);
     }
 }

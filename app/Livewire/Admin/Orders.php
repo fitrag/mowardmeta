@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\SubscriptionOrder;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -19,13 +20,16 @@ class Orders extends Component
 
     #[Url(except: '')]
     public string $search = '';
-    
+
     #[Url(except: '')]
     public string $statusFilter = '';
-    
+
     public bool $showModal = false;
+
     public ?int $viewingOrderId = null;
+
     public ?SubscriptionOrder $viewingOrder = null;
+
     public string $adminNotes = '';
 
     public function updatedSearch(): void
@@ -48,8 +52,9 @@ class Orders extends Component
 
     public function approveOrder(): void
     {
-        if (!$this->viewingOrder || !$this->viewingOrder->isPending()) {
+        if (! $this->viewingOrder || ! $this->viewingOrder->isPending()) {
             session()->flash('error', 'Order not found or already processed.');
+
             return;
         }
 
@@ -57,25 +62,23 @@ class Orders extends Component
         $user = $order->user;
         $plan = $order->subscriptionPlan;
 
-        if (!$user || !$plan) {
+        if (! $user || ! $plan) {
             session()->flash('error', 'User or subscription plan not found.');
+
             return;
         }
 
-        // Calculate new expiry date
         $baseDate = $user->subscription_expires_at && $user->subscription_expires_at->isFuture()
             ? $user->subscription_expires_at->copy()
             : Carbon::now();
 
         $newExpiryDate = $baseDate->addDays($plan->duration_days);
 
-        // Update user subscription
         $user->update([
             'is_subscribed' => true,
             'subscription_expires_at' => $newExpiryDate,
         ]);
 
-        // Update order status
         $order->update([
             'status' => 'approved',
             'admin_notes' => $this->adminNotes ?: null,
@@ -83,13 +86,16 @@ class Orders extends Component
             'processed_by' => auth()->id(),
         ]);
 
+        // Invalidate caches
+        Cache::forget('admin_pending_orders');
+
         session()->flash('success', 'Order approved successfully!');
         $this->closeModal();
     }
 
     public function rejectOrder(): void
     {
-        if (!$this->viewingOrder || !$this->viewingOrder->isPending()) {
+        if (! $this->viewingOrder || ! $this->viewingOrder->isPending()) {
             return;
         }
 
@@ -99,6 +105,9 @@ class Orders extends Component
             'processed_at' => now(),
             'processed_by' => auth()->id(),
         ]);
+
+        // Invalidate caches
+        Cache::forget('admin_pending_orders');
 
         $this->closeModal();
     }
@@ -119,7 +128,7 @@ class Orders extends Component
             ->when($this->search, function ($query) {
                 $query->whereHas('user', function ($q) {
                     $q->where('name', 'like', "%{$this->search}%")
-                      ->orWhere('email', 'like', "%{$this->search}%");
+                        ->orWhere('email', 'like', "%{$this->search}%");
                 });
             })
             ->when($this->statusFilter, function ($query) {
@@ -129,10 +138,22 @@ class Orders extends Component
             ->paginate(10);
     }
 
-    #[Computed]
+    #[Computed(cache: true, seconds: 30)]
     public function pendingCount(): int
     {
-        return SubscriptionOrder::pending()->count();
+        return Cache::remember('admin_orders_pending_count', 30, fn () => SubscriptionOrder::pending()->count());
+    }
+
+    #[Computed(cache: true, seconds: 30)]
+    public function approvedCount(): int
+    {
+        return Cache::remember('admin_orders_approved_count', 30, fn () => SubscriptionOrder::approved()->count());
+    }
+
+    #[Computed(cache: true, seconds: 30)]
+    public function rejectedCount(): int
+    {
+        return Cache::remember('admin_orders_rejected_count', 30, fn () => SubscriptionOrder::rejected()->count());
     }
 
     public function render()
@@ -140,6 +161,8 @@ class Orders extends Component
         return view('livewire.admin.orders', [
             'orders' => $this->orders,
             'pendingCount' => $this->pendingCount,
+            'approvedCount' => $this->approvedCount,
+            'rejectedCount' => $this->rejectedCount,
         ]);
     }
 }

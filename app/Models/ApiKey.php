@@ -13,13 +13,19 @@ class ApiKey extends Model
         'is_active',
         'usage_count',
         'last_used_at',
+        'base_url',
+        'models',
+        'is_custom',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'is_custom' => 'boolean',
+            'models' => 'array',
             'last_used_at' => 'datetime',
+            'usage_count' => 'integer',
         ];
     }
 
@@ -35,11 +41,18 @@ class ApiKey extends Model
     }
 
     /**
-     * Increment usage count
+     * Increment usage count in a single query
      */
     public function incrementUsage(): void
     {
-        $this->increment('usage_count');
-        $this->update(['last_used_at' => now()]);
+        $this->newQuery()
+            ->where('id', $this->id)
+            ->update([
+                'usage_count' => $this->usage_count + 1,
+                'last_used_at' => now(),
+            ]);
+
+        $this->usage_count++;
+        $this->last_used_at = now();
     }
 }

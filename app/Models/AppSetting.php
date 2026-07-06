@@ -17,6 +17,11 @@ class AppSetting extends Model
     ];
 
     /**
+     * Cache key for all settings
+     */
+    protected const ALL_SETTINGS_CACHE_KEY = 'app_settings_all';
+
+    /**
      * Get a setting value by key
      */
     public static function get(string $key, mixed $default = null): mixed
@@ -25,7 +30,7 @@ class AppSetting extends Model
             return static::where('key', $key)->first();
         });
 
-        if (!$setting) {
+        if (! $setting) {
             return $default;
         }
 
@@ -44,14 +49,17 @@ class AppSetting extends Model
     {
         static::where('key', $key)->update(['value' => $value]);
         Cache::forget("app_setting_{$key}");
+        Cache::forget(self::ALL_SETTINGS_CACHE_KEY);
     }
 
     /**
-     * Get all settings grouped
+     * Get all settings grouped with caching
      */
     public static function getAllGrouped(): array
     {
-        return static::all()->groupBy('group')->toArray();
+        return Cache::remember(self::ALL_SETTINGS_CACHE_KEY, 3600, function () {
+            return static::all()->groupBy('group')->toArray();
+        });
     }
 
     /**
@@ -63,5 +71,6 @@ class AppSetting extends Model
         foreach ($settings as $setting) {
             Cache::forget("app_setting_{$setting->key}");
         }
+        Cache::forget(self::ALL_SETTINGS_CACHE_KEY);
     }
 }

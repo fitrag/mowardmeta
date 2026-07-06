@@ -5,6 +5,7 @@ namespace App\Livewire\User;
 use App\Models\PaymentMethod;
 use App\Models\SubscriptionOrder;
 use App\Models\SubscriptionPlan;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
@@ -18,7 +19,9 @@ class Subscription extends Component
     use WithFileUploads;
 
     public bool $showOrderModal = false;
+
     public ?int $selectedPlanId = null;
+
     public ?SubscriptionPlan $selectedPlan = null;
 
     #[Validate('required|exists:payment_methods,id')]
@@ -33,10 +36,10 @@ class Subscription extends Component
     public function selectPlan(int $planId): void
     {
         $user = auth()->user();
-        
-        // Check if user already has a pending order
+
         if ($user->hasPendingOrder()) {
             session()->flash('error', 'You already have a pending order. Please wait for it to be processed.');
+
             return;
         }
 
@@ -52,22 +55,20 @@ class Subscription extends Component
     {
         $user = auth()->user();
 
-        // Check again for pending order
         if ($user->hasPendingOrder()) {
             session()->flash('error', 'You already have a pending order.');
             $this->closeModal();
+
             return;
         }
 
         $this->validate();
 
-        // Upload proof of payment if provided
         $proofPath = null;
         if ($this->proofOfPayment) {
             $proofPath = $this->proofOfPayment->store('proofs', 'public');
         }
 
-        // Create the order
         SubscriptionOrder::create([
             'user_id' => $user->id,
             'subscription_plan_id' => $this->selectedPlanId,
@@ -105,25 +106,46 @@ class Subscription extends Component
         $this->resetValidation();
     }
 
+    #[Computed(cache: true, seconds: 60)]
+    public function plans()
+    {
+        return SubscriptionPlan::getActive();
+    }
+
+    #[Computed(cache: true, seconds: 60)]
+    public function paymentMethods()
+    {
+        return PaymentMethod::getActive();
+    }
+
+    #[Computed(cache: true, seconds: 30)]
+    public function pendingOrder()
+    {
+        return auth()->user()->latestPendingOrder();
+    }
+
+    #[Computed(cache: true, seconds: 30)]
+    public function recentOrders()
+    {
+        return auth()->user()->subscriptionOrders()->latest()->take(5)->get();
+    }
+
     public function render()
     {
         $user = auth()->user();
-        $plans = SubscriptionPlan::getActive();
-        $paymentMethods = PaymentMethod::getActive();
-        $pendingOrder = $user->latestPendingOrder();
-        $recentOrders = $user->subscriptionOrders()->latest()->take(5)->get();
-        
+        $pendingOrder = $this->pendingOrder;
+
         return view('livewire.user.subscription', [
             'user' => $user,
-            'plans' => $plans,
-            'paymentMethods' => $paymentMethods,
+            'plans' => $this->plans,
+            'paymentMethods' => $this->paymentMethods,
             'isSubscribed' => $user->isSubscribed(),
             'remainingGenerations' => $user->getRemainingGenerations(),
             'dailyLimit' => $user->getDailyLimit(),
             'todayCount' => $user->getTodayGenerationCount(),
-            'hasPendingOrder' => $user->hasPendingOrder(),
+            'hasPendingOrder' => $pendingOrder !== null,
             'pendingOrder' => $pendingOrder,
-            'recentOrders' => $recentOrders,
+            'recentOrders' => $this->recentOrders,
         ]);
     }
 }

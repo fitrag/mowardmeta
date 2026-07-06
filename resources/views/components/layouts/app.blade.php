@@ -37,9 +37,9 @@
 </head>
 <body class="min-h-screen font-sans antialiased" x-data x-init="$store.theme.init()">
     <div class="flex min-h-screen">
-        <aside id="sidebar" 
-               class="fixed inset-y-0 left-0 z-50 flex flex-col"
-               style="background-color: var(--bg-secondary); border-right: 1px solid var(--border-color); width: 256px; transition: width 0.3s ease;"
+        <aside id="sidebar"
+               class="fixed inset-y-0 left-0 z-50 flex flex-col -translate-x-full lg:translate-x-0"
+               style="background-color: var(--bg-secondary); border-right: 1px solid var(--border-color); width: 256px; transition: transform 0.3s ease, width 0.3s ease;"
                x-data="{ collapsed: localStorage.getItem('sidebar-collapsed') === 'true' }"
                x-init="applyCollapsed(); $watch('collapsed', val => { localStorage.setItem('sidebar-collapsed', val); applyCollapsed(); })">
             <div class="flex flex-col h-full overflow-hidden">
@@ -55,7 +55,7 @@
                     </div>
                 </div>
 
-                <nav class="flex-1 px-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
+                <nav class="flex-1 px-2 overflow-y-auto overflow-x-hidden">
                     @auth
                         @if(auth()->user()->isAdmin())
                             <div class="px-3 mt-3 mb-1.5 sidebar-text">
@@ -108,23 +108,23 @@
                                 <span class="sidebar-text">Plans</span>
                             </a>
                             
-                            <div class="px-4 mt-4 mb-2">
-                                <p class="text-xs font-bold uppercase tracking-wider opacity-50" style="color: var(--text-muted);">License Management</p>
-                                <span class="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-emerald-500 to-cyan-500 text-white">NEW</span>
+                            <div class="px-4 mt-4 mb-2 sidebar-text">
+                                <p class="text-xs font-bold uppercase tracking-wider opacity-50 sidebar-text" style="color: var(--text-muted);">License Management</p>
+                                <span class="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-emerald-500 to-cyan-500 text-white sidebar-text">NEW</span>
                             </div>
                             
                             <a href="{{ route('admin.licenses') }}" class="sidebar-link {{ request()->routeIs('admin.licenses') ? 'active' : '' }}" wire:navigate>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
                                 </svg>
-                                <span class="font-medium">Licenses</span>
+                                <span class="sidebar-text font-medium">Licenses</span>
                             </a>
                             
                             <a href="{{ route('admin.license-plans') }}" class="sidebar-link {{ request()->routeIs('admin.license-plans') ? 'active' : '' }}" wire:navigate>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                                 </svg>
-                                <span class="font-medium">License Plans</span>
+                                <span class="sidebar-text font-medium">License Plans</span>
                             </a>
                             
                             @php $pendingLicenseOrders = \App\Models\LicenseOrder::pending()->count(); @endphp
@@ -132,22 +132,22 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                                 </svg>
-                                <span class="font-medium">License Orders</span>
+                                <span class="sidebar-text font-medium">License Orders</span>
                                 @if($pendingLicenseOrders > 0)
-                                    <span class="ml-auto px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500">{{ $pendingLicenseOrders }}</span>
+                                    <span class="ml-auto px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500 sidebar-text">{{ $pendingLicenseOrders }}</span>
                                 @endif
                             </a>
                             
-                            <div class="px-4 mt-4 mb-2">
-                                <p class="text-xs font-bold uppercase tracking-wider opacity-50" style="color: var(--text-muted);">Product Management</p>
-                                <span class="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-emerald-500 to-cyan-500 text-white">NEW</span>
+                            <div class="px-4 mt-4 mb-2 sidebar-text">
+                                <p class="text-xs font-bold uppercase tracking-wider opacity-50 sidebar-text" style="color: var(--text-muted);">Product Management</p>
+                                <span class="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-emerald-500 to-cyan-500 text-white sidebar-text">NEW</span>
                             </div>
                             
                             <a href="{{ route('admin.products') }}" class="sidebar-link {{ request()->routeIs('admin.products') ? 'active' : '' }}" wire:navigate>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                                 </svg>
-                                <span class="font-medium">Products</span>
+                                <span class="sidebar-text font-medium">Products</span>
                             </a>
                             
                             @php $pendingProductOrders = \App\Models\ProductOrder::pending()->count(); @endphp
@@ -155,9 +155,9 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                                 </svg>
-                                <span class="font-medium">Product Orders</span>
+                                <span class="sidebar-text font-medium">Product Orders</span>
                                 @if($pendingProductOrders > 0)
-                                    <span class="ml-auto px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500">{{ $pendingProductOrders }}</span>
+                                    <span class="ml-auto px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-500 sidebar-text">{{ $pendingProductOrders }}</span>
                                 @endif
                             </a>
                             
@@ -218,16 +218,16 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
                             </svg>
-                            <span class="font-medium">Licenses</span>
-                            <span class="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-emerald-500 to-cyan-500 text-white">NEW</span>
+                            <span class="sidebar-text font-medium">Licenses</span>
+                            <span class="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-emerald-500 to-cyan-500 text-white sidebar-text">NEW</span>
                         </a>
 
                         <a href="{{ route('products') }}" class="sidebar-link {{ request()->routeIs('products') ? 'active' : '' }}" wire:navigate>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                             </svg>
-                            <span class="font-medium">Products</span>
-                            <span class="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-emerald-500 to-cyan-500 text-white">NEW</span>
+                            <span class="sidebar-text font-medium">Products</span>
+                            <span class="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded bg-gradient-to-r from-emerald-500 to-cyan-500 text-white sidebar-text">NEW</span>
                         </a>
 
                         <a href="{{ route('settings') }}" class="sidebar-link {{ request()->routeIs('settings') ? 'active' : '' }}" wire:navigate>
@@ -274,9 +274,9 @@
             </div>
         </aside>
 
-        <button id="sidebar-toggle" 
+        <button id="sidebar-toggle"
                 @click="Alpine.$data(document.getElementById('sidebar')).collapsed = !Alpine.$data(document.getElementById('sidebar')).collapsed"
-                class="fixed top-4 z-50 p-1.5 rounded-lg transition-all duration-300"
+                class="hidden lg:block fixed top-4 z-50 p-1.5 rounded-lg transition-all duration-300"
                 style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-muted); left: 244px;"
                 onmouseover="this.style.backgroundColor='var(--bg-muted)'; this.style.color='var(--text-secondary)'"
                 onmouseout="this.style.backgroundColor='var(--bg-secondary)'; this.style.color='var(--text-muted)'"
@@ -286,9 +286,9 @@
             </svg>
         </button>
 
-        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
 
-        <main id="main-content" class="flex-1 flex flex-col min-h-screen" style="margin-left: 256px; transition: margin-left 0.3s ease;">
+        <main id="main-content" class="flex-1 flex flex-col min-h-screen lg:ml-[256px] transition-all duration-300">
             <!-- Mobile Header -->
             <header class="sticky top-0 z-30 lg:hidden" 
                     style="background-color: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
@@ -336,7 +336,7 @@
                 }
                 sidebar.querySelectorAll('.sidebar-link').forEach(link => {
                     link.style.justifyContent = 'center';
-                    link.style.padding = '0.5rem';
+                    link.style.padding = '0.625rem';
                     link.style.gap = '0';
                 });
                 sidebar.querySelectorAll('.sidebar-link svg').forEach(svg => {
@@ -360,7 +360,7 @@
                 }
                 sidebar.querySelectorAll('.sidebar-link').forEach(link => {
                     link.style.justifyContent = 'flex-start';
-                    link.style.padding = '0.5rem 0.75rem';
+                    link.style.padding = '0.625rem 0.875rem';
                     link.style.gap = '';
                 });
                 sidebar.querySelectorAll('.sidebar-link svg').forEach(svg => {
@@ -377,12 +377,12 @@
             
             const navTexts = sidebar.querySelectorAll('nav .sidebar-text');
             navTexts.forEach(el => {
-                el.style.display = collapsed ? 'none' : 'inline';
+                el.style.display = collapsed ? 'none' : '';
             });
             
             const headerTexts = sidebar.querySelectorAll('.sidebar-header-text');
             headerTexts.forEach(el => {
-                el.style.display = collapsed ? 'none' : 'block';
+                el.style.display = collapsed ? 'none' : '';
             });
             
             const logos = sidebar.querySelectorAll('.sidebar-logo');
@@ -494,9 +494,16 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar) return;
             
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            const isHidden = sidebar.classList.contains('-translate-x-full');
+            if (isHidden) {
+                sidebar.classList.remove('-translate-x-full');
+                if (overlay) overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                if (overlay) overlay.classList.add('hidden');
+            }
         }
         
         if (typeof window.SwalTheme === 'undefined') {

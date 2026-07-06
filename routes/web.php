@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\SocialiteController;
 use App\Livewire\Admin\ApiKeys;
 use App\Livewire\Admin\AppSettings;
@@ -23,7 +24,6 @@ use App\Livewire\User\MetadataGenerator;
 use App\Livewire\User\ProductStore;
 use App\Livewire\User\Settings;
 use App\Livewire\User\Subscription;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -57,7 +57,7 @@ Route::get('/symlink', function () {
 Route::middleware('guest')->group(function () {
     Route::get('login', Login::class)->name('login');
     Route::get('register', Register::class)->name('register');
-    
+
     // Google OAuth
     Route::get('/auth/google', [SocialiteController::class, 'redirectToGoogle'])->name('auth.google');
     Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback']);
@@ -77,14 +77,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/licenses', LicenseStore::class)->name('licenses');
     Route::get('/products', ProductStore::class)->name('products');
     Route::get('/settings', Settings::class)->name('settings');
-    
+
     // Logout
-    Route::post('/logout', function () {
-        Auth::logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-        return redirect()->route('login');
-    })->name('logout');
+    Route::post('/logout', LogoutController::class)->name('logout');
 });
 
 /*
@@ -106,4 +101,3 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/product-orders', ProductOrders::class)->name('admin.product-orders');
     Route::get('/settings', AppSettings::class)->name('admin.settings');
 });
-

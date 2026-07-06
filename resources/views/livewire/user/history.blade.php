@@ -26,11 +26,18 @@
                 </svg>
                 Export All
             </button>
+
+            <button @click="exportAllShutterstockCsv()" class="btn-secondary" :disabled="sessions.length === 0" style="background-color: #f7c742; color: #1a1a1a; border-color: #f7c742;">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Export Shutterstock
+            </button>
         </div>
     </div>
 
     <!-- Stats Summary -->
-    <div class="grid grid-cols-3 gap-3" x-show="!isLoading && sessions.length > 0">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" x-show="!isLoading && sessions.length > 0">
         <div class="card p-3">
             <p class="text-[11px] font-medium uppercase tracking-wide" style="color: var(--text-muted);">Sessions</p>
             <p class="text-xl font-bold mt-0.5" style="color: var(--text-primary);" x-text="sessions.length"></p>
@@ -102,6 +109,18 @@
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                </button>
+                                <button 
+                                    @click="exportSessionShutterstockCsv(session)"
+                                    class="p-2 rounded-lg transition-colors"
+                                    style="color: var(--text-muted);"
+                                    onmouseover="this.style.backgroundColor='#f7c742'; this.style.color='#1a1a1a'"
+                                    onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--text-muted)'"
+                                    title="Export Shutterstock CSV"
+                                >
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6zm4 4h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                                     </svg>
                                 </button>
                                 <button 

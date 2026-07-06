@@ -19,6 +19,9 @@ class SubscriptionPlan extends Model
     {
         return [
             'is_active' => 'boolean',
+            'duration_days' => 'integer',
+            'price' => 'integer',
+            'sort_order' => 'integer',
         ];
     }
 
@@ -51,7 +54,7 @@ class SubscriptionPlan extends Model
      */
     public function getFormattedPriceAttribute(): string
     {
-        return 'Rp ' . number_format($this->price, 0, ',', '.');
+        return 'Rp '.number_format($this->price, 0, ',', '.');
     }
 
     /**
@@ -61,12 +64,14 @@ class SubscriptionPlan extends Model
     {
         if ($this->duration_days >= 365) {
             $years = floor($this->duration_days / 365);
-            return $years . ' Tahun';
+
+            return $years.' Tahun';
         } elseif ($this->duration_days >= 30) {
             $months = floor($this->duration_days / 30);
-            return $months . ' Bulan';
+
+            return $months.' Bulan';
         } else {
-            return $this->duration_days . ' Hari';
+            return $this->duration_days.' Hari';
         }
     }
 }
