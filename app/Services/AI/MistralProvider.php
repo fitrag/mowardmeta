@@ -62,7 +62,7 @@ class MistralProvider implements AIProviderInterface
                     'content' => [
                         [
                             'type' => 'text',
-                            'text' => $prompt . "\n\nRespond with valid JSON only: {\"title\": \"...\", \"keywords\": \"...\"}",
+                            'text' => $prompt . "\n\nRespond with valid JSON only: {\"title\": \"...\", \"category\": \"...\", \"keywords\": \"...\"}",
                         ],
                         [
                             'type' => 'image_url',
@@ -117,6 +117,7 @@ class MistralProvider implements AIProviderInterface
 
         return [
             'title' => $data['title'],
+            'category' => $data['category'] ?? 'Graphic Resources',
             'keywords' => $data['keywords'],
         ];
     }

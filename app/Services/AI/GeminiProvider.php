@@ -42,14 +42,18 @@ class GeminiProvider implements AIProviderInterface
                     'properties' => [
                         'title' => [
                             'type' => 'STRING',
-                            'description' => 'A highly marketable, descriptive title in English',
+                            'description' => 'A highly marketable, SEO-optimized title (80-200 characters)',
+                        ],
+                        'category' => [
+                            'type' => 'STRING',
+                            'description' => 'Single Adobe Stock category',
                         ],
                         'keywords' => [
                             'type' => 'STRING',
-                            'description' => 'Comma-separated keywords',
+                            'description' => 'Comma-separated single-word keywords',
                         ],
                     ],
-                    'required' => ['title', 'keywords'],
+                    'required' => ['title', 'category', 'keywords'],
                 ],
             ],
         ];
@@ -108,6 +112,7 @@ class GeminiProvider implements AIProviderInterface
 
         return [
             'title' => $data['title'],
+            'category' => $data['category'] ?? 'Graphic Resources',
             'keywords' => $data['keywords'],
         ];
     }

@@ -179,11 +179,7 @@ class User extends Authenticatable
      */
     public function getDailyLimit(): int
     {
-        return cache()->remember(
-            'app_free_user_daily_limit',
-            3600, // 1 hour cache
-            fn() => (int) Setting::getValue('free_user_daily_limit', 5)
-        );
+        return (int) AppSetting::get('free_user_daily_limit', 5);
     }
 
     /**

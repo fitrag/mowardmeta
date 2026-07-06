@@ -3,6 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Models\ApiKey;
+use App\Models\License;
+use App\Models\LicenseOrder;
 use App\Models\MetadataGeneration;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -45,6 +47,18 @@ class Dashboard extends Component
         return Cache::remember('admin_active_api_keys', 60, fn() => ApiKey::where('is_active', true)->count());
     }
 
+    #[Computed(cache: true, seconds: 60)]
+    public function activeLicenses(): int
+    {
+        return Cache::remember('admin_active_licenses', 60, fn() => License::where('status', 'active')->count());
+    }
+
+    #[Computed]
+    public function pendingLicenseOrders(): int
+    {
+        return LicenseOrder::pending()->count();
+    }
+
     #[Computed]
     public function recentUsers()
     {
@@ -64,6 +78,8 @@ class Dashboard extends Component
             'activeUsers' => $this->activeUsers,
             'totalGenerations' => $this->totalGenerations,
             'activeApiKeys' => $this->activeApiKeys,
+            'activeLicenses' => $this->activeLicenses,
+            'pendingLicenseOrders' => $this->pendingLicenseOrders,
             'recentUsers' => $this->recentUsers,
             'recentGenerations' => $this->recentGenerations,
         ]);

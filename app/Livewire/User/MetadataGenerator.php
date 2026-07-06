@@ -122,8 +122,11 @@ class MetadataGenerator extends Component
             // Validate and trim keywords to match user-specified count
             $keywords = $this->validateKeywordCount($result['keywords']);
 
-            // Validate and enforce title length limit (max 180 characters)
-            $title = $this->validateTitleLength($result['title']);
+            // Validate and enforce title length limit (max 200 characters)
+            $title = $this->validateTitleLength($result['title'], 200);
+
+            // Get category
+            $category = $result['category'] ?? 'Graphic Resources';
 
             // Save to database for generation count tracking
             MetadataGeneration::create([
@@ -137,20 +140,23 @@ class MetadataGenerator extends Component
             // Update queue
             $this->imageQueue[$index]['status'] = 'completed';
             $this->imageQueue[$index]['title'] = $title;
+            $this->imageQueue[$index]['category'] = $category;
             $this->imageQueue[$index]['keywords'] = $keywords;
             
             // Store in results (use placeholder for image since it's in IndexedDB)
             $this->results[$index] = [
                 'filename' => $filename,
                 'title' => $title,
+                'category' => $category,
                 'keywords' => $keywords,
             ];
             
             // Dispatch event to save to IndexedDB history
             $this->dispatch('save-to-history', [
                 'filename' => $filename,
-                'title' => $result['title'],
-                'keywords' => $result['keywords'],
+                'title' => $title,
+                'category' => $category,
+                'keywords' => $keywords,
             ]);
 
         } catch (\Exception $e) {
@@ -217,10 +223,15 @@ class MetadataGenerator extends Component
      * Validate and trim keywords to match user-specified count.
      * Keywords can be equal to or less than the limit, but never more.
      */
-    protected function validateKeywordCount(string $keywords): string
+    protected function validateKeywordCount(string|array $keywords): string
     {
-        // Split keywords by comma
-        $keywordArray = array_map('trim', explode(',', $keywords));
+        // Handle if keywords is already an array
+        if (is_array($keywords)) {
+            $keywordArray = array_map('trim', $keywords);
+        } else {
+            // Split keywords by comma
+            $keywordArray = array_map('trim', explode(',', $keywords));
+        }
         
         // Remove empty values
         $keywordArray = array_filter($keywordArray, fn($k) => !empty($k));
@@ -260,13 +271,79 @@ class MetadataGenerator extends Component
     {
         $additionalContext = $this->description ? "\n\nAdditional context from user: {$this->description}" : '';
         
+        $adobeCategories = [
+            'Animals', 'Buildings and Architecture', 'Business', 'Drinks', 'The Environment',
+            'States of Mind', 'Food', 'Graphic Resources', 'Hobbies and Leisure', 'Industry',
+            'Landscapes', 'Lifestyle', 'People', 'Plants and Flowers', 'Culture and Religion',
+            'Science', 'Social Issues', 'Sports', 'Technology', 'Transport', 'Travel'
+        ];
+        $categoriesList = implode("\n- ", $adobeCategories);
+
         if ($this->mode === 'slow') {
-            // Detailed, high-quality mode with comprehensive prompt
+            // Detailed mode - comprehensive Adobe Stock SEO prompt
+            return <<<PROMPT
+You are a TOP-TIER Adobe Stock SEO Specialist with 10+ years of experience optimizing stock photography metadata for maximum sales and discoverability. You have deep knowledge of:
+- Adobe Stock search algorithm and ranking factors
+- Buyer search behavior and trending keywords
+- Commercial licensing requirements
+- High-converting metadata patterns
+
+Your metadata consistently achieves top search rankings and high sales conversion rates.
+
+Analyze this image and generate PROFESSIONAL, SALES-OPTIMIZED metadata in English:
+
+## TITLE (MOST CRITICAL - This determines 70% of discoverability):
+Requirements:
+- Length: 80-200 characters (optimal for Adobe Stock algorithm)
+- Structure: [Primary Subject] + [Action/State] + [Setting/Context] + [Mood/Atmosphere] + [Style/Quality]
+- MUST start with the most searchable, specific noun (not articles like "A" or "The")
+- Include 3-5 high-value descriptive adjectives (professional, modern, elegant, vibrant, authentic, etc.)
+- Add emotional/mood qualifiers (happy, confident, peaceful, dynamic, etc.)
+- Specify demographics if people are present (young, senior, diverse, professional, etc.)
+- Include setting details (office, outdoor, studio, urban, nature, etc.)
+- Add technical/style descriptors when relevant (aerial view, close-up, wide angle, minimalist, etc.)
+- Use commercially valuable terms buyers actually search for
+- NEVER use: "image", "photo", "picture", "stock", "illustration" (these waste characters)
+- NEVER start with articles (A, An, The)
+
+EXCELLENT TITLE EXAMPLES:
+✓ "Confident young African American businesswoman presenting financial data on digital screen in modern corporate boardroom"
+✓ "Fresh organic vegetables and fruits arranged on rustic wooden table with morning sunlight streaming through kitchen window"
+✓ "Aerial drone view of turquoise ocean waves crashing on pristine white sand tropical beach at golden hour sunset"
+
+POOR TITLE EXAMPLES (AVOID):
+✗ "A woman in an office" (too generic, no value)
+✗ "Photo of food on table" (wastes characters on "photo")
+✗ "Beautiful landscape" (no specificity)
+
+## CATEGORY:
+Select the SINGLE most accurate category:
+- {$categoriesList}
+
+## KEYWORDS ({$this->keywordCount} keywords for maximum reach):
+Rules:
+- EXACTLY {$this->keywordCount} single-word keywords, comma-separated
+- Each keyword = ONE word only (no spaces, no hyphens, no phrases)
+- Lowercase only
+- Priority order: main subject → actions → objects → setting → mood → colors → concepts → style → use cases
+- Include synonyms of title words
+- Add related concepts buyers might search
+- Include both specific and broad terms
+- Add trending/commercial terms when relevant
+{$additionalContext}
+
+RESPOND IN THIS EXACT FORMAT:
+TITLE: [your professional SEO title]
+CATEGORY: [single category name]
+KEYWORDS: [keyword1, keyword2, keyword3, ...]
+PROMPT;
+        } else {
+            // Fast mode - simpler prompt for quick generation
             return <<<PROMPT
 You are an expert Senior Metadata Editor and SEO strategist for a top-tier microstock agency like Getty Images or Adobe Stock. Your primary goal is to maximize the commercial discoverability and sales potential of an image.
 
 **Analysis & Strategy:**
-Analyze the provided image and generate a highly marketable title and a list of exactly {$this->keywordCount} strategically chosen keywords.
+Analyze the provided image and generate a highly marketable title, category, and a list of exactly {$this->keywordCount} strategically chosen keywords.
 
 **1. Title Generation (SEO-Optimized, Descriptive):**
 - Create a HIGHLY DESCRIPTIVE, SEO-optimized title in English (120-180 characters).
@@ -281,7 +358,11 @@ Analyze the provided image and generate a highly marketable title and a list of 
 - BAD: "Beautiful sunset" (generic, not SEO)
 - GOOD: "Dramatic golden sunset over calm ocean with silhouette of palm trees, tropical paradise vacation destination, warm orange and purple sky"
 
-**2. Keyword Generation (Exactly {$this->keywordCount} Keywords):**
+**2. Category Selection:**
+Select the SINGLE most accurate category from this list:
+- {$categoriesList}
+
+**3. Keyword Generation (Exactly {$this->keywordCount} Keywords):**
 
 **CRITICAL RULES:**
 - Each keyword MUST be a SINGLE WORD only. No phrases, no compound words with spaces.
@@ -303,29 +384,10 @@ Analyze the provided image and generate a highly marketable title and a list of 
     - Avoid spammy or irrelevant terms.
 {$additionalContext}
 
-Output keywords as comma-separated lowercase SINGLE words only, ordered by relevance to the image.
-PROMPT;
-        } else {
-            // Fast mode - optimized prompt for speed
-            return <<<PROMPT
-You are a stock photo metadata expert for Adobe Stock and Shutterstock. Analyze this image and generate optimized metadata.
-
-**Title (SEO-Optimized, Descriptive):**
-- Create a HIGHLY DESCRIPTIVE title (120-180 characters) that tells the complete story.
-- Include: main subject, action/state, setting/context, mood, colors, style.
-- Structure: [Subject] + [Action] + [Context] + [Descriptive Details]
-- Example: "Professional businesswoman typing on laptop in modern office, focused expression, bright natural lighting, corporate workplace concept"
-- AVOID short generic titles like "Woman working" - be SPECIFIC and DETAILED.
-
-**Keywords:** Generate exactly {$this->keywordCount} comma-separated lowercase keywords.
-
-**CRITICAL RULES:**
-- Each keyword MUST be a SINGLE WORD only. NO phrases allowed.
-- VALID: business, laptop, woman, success, office, technology, professional
-- INVALID: "business woman", "office desk", "home office" - NEVER use multi-word phrases
-- Order from MOST relevant to LEAST relevant based on image content and title.
-- First keywords = main visible subjects. Last keywords = abstract concepts.
-{$additionalContext}
+RESPOND IN THIS EXACT FORMAT:
+TITLE: [your SEO-optimized title]
+CATEGORY: [single category name]
+KEYWORDS: [keyword1, keyword2, keyword3, ...]
 PROMPT;
         }
     }

@@ -111,6 +111,7 @@ class AIService
 
                     return [
                         'title' => $result['title'],
+                        'category' => $result['category'] ?? 'Graphic Resources',
                         'keywords' => $result['keywords'],
                         'provider' => $providerName,
                         'api_key' => $apiKey,

@@ -307,15 +307,44 @@
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold" style="color: var(--text-primary);">Results</h2>
                 @if(count($results) > 0 && !$isProcessing)
-                    <button 
-                        @click="exportToCSV()"
-                        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-500/10 text-primary-500 hover:bg-primary-500/20 transition-colors"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        Export CSV
-                    </button>
+                    <div class="relative" x-data="{ open: false }">
+                        <button 
+                            @click="open = !open"
+                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-500/10 text-primary-500 hover:bg-primary-500/20 transition-colors"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Export CSV
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div 
+                            x-show="open" 
+                            @click.away="open = false"
+                            x-transition
+                            class="absolute right-0 mt-2 w-48 rounded-xl shadow-lg z-10 border overflow-hidden"
+                            style="background-color: var(--bg-card); border-color: var(--border-color);"
+                        >
+                            <button 
+                                @click="exportToCSV('adobe'); open = false"
+                                class="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--bg-hover)] transition-colors flex items-center gap-2"
+                                style="color: var(--text-primary);"
+                            >
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                Adobe Stock
+                            </button>
+                            <button 
+                                @click="exportToCSV('vecteezy'); open = false"
+                                class="w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--bg-hover)] transition-colors flex items-center gap-2"
+                                style="color: var(--text-primary);"
+                            >
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Vecteezy
+                            </button>
+                        </div>
+                    </div>
                 @endif
             </div>
 
@@ -405,6 +434,16 @@
                                         {{ $result['title'] }}
                                     </div>
                                 </div>
+
+                                <!-- Category Section -->
+                                @if(isset($result['category']))
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold uppercase tracking-wider" style="color: var(--text-muted);">Category</label>
+                                    <div class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20">
+                                        {{ $result['category'] }}
+                                    </div>
+                                </div>
+                                @endif
                                 
                                 <!-- Keywords Section -->
                                 <div class="space-y-2">

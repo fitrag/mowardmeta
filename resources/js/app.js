@@ -243,25 +243,67 @@ window.metadataImageUploader = function () {
             this.$wire.processImage(index, img.filename, img.base64, img.mimeType);
         },
 
-        exportToCSV() {
+        exportToCSV(format = 'adobe') {
             const results = this.$wire.results;
             if (!results || Object.keys(results).length === 0) {
                 showToast('No results to export', 'warning');
                 return;
             }
 
-            // CSV header
-            let csv = 'Filename,Title,Keywords\n';
+            // Category mapping to numbers (Adobe Stock)
+            const categoryMap = {
+                'Animals': 1,
+                'Buildings and Architecture': 2,
+                'Business': 3,
+                'Drinks': 4,
+                'The Environment': 5,
+                'States of Mind': 6,
+                'Food': 7,
+                'Graphic Resources': 8,
+                'Hobbies and Leisure': 9,
+                'Industry': 10,
+                'Landscapes': 11,
+                'Lifestyle': 12,
+                'People': 13,
+                'Plants and Flowers': 14,
+                'Culture and Religion': 15,
+                'Science': 16,
+                'Social Issues': 17,
+                'Sports': 18,
+                'Technology': 19,
+                'Transport': 20,
+                'Travel': 21
+            };
 
-            // Add each result
-            Object.values(results).forEach(result => {
-                // Escape quotes and wrap in quotes for CSV
-                const filename = '"' + (result.filename || '').replace(/"/g, '""') + '"';
-                const title = '"' + (result.title || '').replace(/"/g, '""') + '"';
-                const keywords = '"' + (result.keywords || '').replace(/"/g, '""') + '"';
+            let csv = '';
 
-                csv += `${filename},${title},${keywords}\n`;
-            });
+            if (format === 'vecteezy') {
+                // Vecteezy format: Filename, Title, Description, Keywords
+                csv = 'Filename,Title,Description,Keywords\n';
+
+                Object.values(results).forEach(result => {
+                    const filename = '"' + (result.filename || '').replace(/"/g, '""') + '"';
+                    const title = '"' + (result.title || '').replace(/"/g, '""') + '"';
+                    // Use title as description for Vecteezy
+                    const description = '"' + (result.title || '').replace(/"/g, '""') + '"';
+                    const keywords = '"' + (result.keywords || '').replace(/"/g, '""') + '"';
+
+                    csv += `${filename},${title},${description},${keywords}\n`;
+                });
+            } else {
+                // Adobe Stock format: Filename, Title, Category (number), Keywords
+                csv = 'Filename,Title,Category,Keywords\n';
+
+                Object.values(results).forEach(result => {
+                    const filename = '"' + (result.filename || '').replace(/"/g, '""') + '"';
+                    const title = '"' + (result.title || '').replace(/"/g, '""') + '"';
+                    const categoryName = result.category || '';
+                    const categoryNum = categoryMap[categoryName] || '';
+                    const keywords = '"' + (result.keywords || '').replace(/"/g, '""') + '"';
+
+                    csv += `${filename},${title},${categoryNum},${keywords}\n`;
+                });
+            }
 
             // Create blob and download
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -272,9 +314,10 @@ window.metadataImageUploader = function () {
             const now = new Date();
             const dateStr = now.toISOString().slice(0, 10);
             const timeStr = now.toTimeString().slice(0, 5).replace(':', '-');
+            const formatSuffix = format === 'vecteezy' ? '_vecteezy' : '_adobe';
 
             link.setAttribute('href', url);
-            link.setAttribute('download', `metadata_${dateStr}_${timeStr}.csv`);
+            link.setAttribute('download', `metadata${formatSuffix}_${dateStr}_${timeStr}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -298,6 +341,7 @@ window.metadataImageUploader = function () {
                 sessionId: this.currentSessionId,
                 filename: data.filename,
                 title: data.title,
+                category: data.category || '',
                 keywords: data.keywords,
                 thumbnail: localImg?.thumbnail || null,
                 createdAt: new Date().toISOString()
@@ -537,15 +581,56 @@ window.clientHistoryManager = function () {
             this.downloadCsv(this.history, `metadata-all-${this.formatDateShort(new Date().toISOString())}.csv`);
         },
 
-        downloadCsv(items, filename) {
-            let csv = 'Filename,Title,Keywords\n';
+        downloadCsv(items, filename, format = 'adobe') {
+            // Category mapping to numbers
+            const categoryMap = {
+                'Animals': 1,
+                'Buildings and Architecture': 2,
+                'Business': 3,
+                'Drinks': 4,
+                'The Environment': 5,
+                'States of Mind': 6,
+                'Food': 7,
+                'Graphic Resources': 8,
+                'Hobbies and Leisure': 9,
+                'Industry': 10,
+                'Landscapes': 11,
+                'Lifestyle': 12,
+                'People': 13,
+                'Plants and Flowers': 14,
+                'Culture and Religion': 15,
+                'Science': 16,
+                'Social Issues': 17,
+                'Sports': 18,
+                'Technology': 19,
+                'Transport': 20,
+                'Travel': 21
+            };
 
-            items.forEach(item => {
-                const fname = '"' + (item.filename || '').replace(/"/g, '""') + '"';
-                const title = '"' + (item.title || '').replace(/"/g, '""') + '"';
-                const keywords = '"' + (item.keywords || '').replace(/"/g, '""') + '"';
-                csv += `${fname},${title},${keywords}\n`;
-            });
+            let csv = '';
+
+            if (format === 'vecteezy') {
+                csv = 'Filename,Title,Description,Keywords\n';
+
+                items.forEach(item => {
+                    const fname = '"' + (item.filename || '').replace(/"/g, '""') + '"';
+                    const title = '"' + (item.title || '').replace(/"/g, '""') + '"';
+                    const description = '"' + (item.title || '').replace(/"/g, '""') + '"';
+                    const keywords = '"' + (item.keywords || '').replace(/"/g, '""') + '"';
+                    csv += `${fname},${title},${description},${keywords}\n`;
+                });
+            } else {
+                csv = 'Filename,Title,Category,Keywords\n';
+
+                items.forEach(item => {
+                    const fname = '"' + (item.filename || '').replace(/"/g, '""') + '"';
+                    const title = '"' + (item.title || '').replace(/"/g, '""') + '"';
+                    const categoryName = item.category || '';
+                    const categoryNum = categoryMap[categoryName] || '';
+                    const keywords = '"' + (item.keywords || '').replace(/"/g, '""') + '"';
+                    csv += `${fname},${title},${categoryNum},${keywords}\n`;
+                });
+            }
 
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
